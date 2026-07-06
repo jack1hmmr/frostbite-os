@@ -1,0 +1,12 @@
+Window.SetBackgroundTopColor(0.039, 0.039, 0.047);
+Window.SetBackgroundBottomColor(0.039, 0.039, 0.047);
+
+mark = Image.Text("FROSTBITE OS", 1.0, 1.0, 1.0);
+mark_sprite = Sprite(mark);
+mark_sprite.SetX(Window.GetWidth() / 2 - mark.GetWidth() / 2);
+mark_sprite.SetY(Window.GetHeight() / 2 - mark.GetHeight() / 2);
+
+accent = Image.Text("////", 0.357, 0.165, 0.525);
+accent_sprite = Sprite(accent);
+accent_sprite.SetX(Window.GetWidth() / 2 - accent.GetWidth() / 2);
+accent_sprite.SetY(Window.GetHeight() / 2 + mark.GetHeight());

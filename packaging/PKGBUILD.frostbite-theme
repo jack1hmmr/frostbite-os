@@ -1,0 +1,19 @@
+# Maintainer: Frostbite OS
+pkgname=frostbite-theme
+pkgver=0.1.0
+pkgrel=1
+pkgdesc="Black, white, and dark purple GTK, Kvantum, Plymouth, and icon theme for Frostbite OS"
+arch=('any')
+url="https://example.invalid/frostbite-os"
+license=('MIT')
+depends=('gtk3' 'gtk4' 'kvantum' 'plymouth' 'hicolor-icon-theme')
+source=()
+sha256sums=()
+
+package() {
+  install -dm0755 "$pkgdir/usr/share/themes" "$pkgdir/usr/share/icons" "$pkgdir/usr/share/Kvantum" "$pkgdir/usr/share/plymouth/themes"
+  cp -a "$startdir/../themes/gtk/Frostbite" "$pkgdir/usr/share/themes/Frostbite"
+  cp -a "$startdir/../themes/icons/Frostbite" "$pkgdir/usr/share/icons/Frostbite"
+  cp -a "$startdir/../themes/kvantum/Frostbite" "$pkgdir/usr/share/Kvantum/Frostbite"
+  cp -a "$startdir/../themes/plymouth/frostbite" "$pkgdir/usr/share/plymouth/themes/frostbite"
+}

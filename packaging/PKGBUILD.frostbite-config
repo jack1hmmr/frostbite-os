@@ -1,0 +1,16 @@
+# Maintainer: Frostbite OS
+pkgname=frostbite-config
+pkgver=0.1.0
+pkgrel=1
+pkgdesc="System tuning, session scripts, and installer defaults for Frostbite OS"
+arch=('any')
+url="https://example.invalid/frostbite-os"
+license=('MIT')
+depends=('systemd' 'gamescope' 'steam' 'gamemode' 'mangohud' 'zram-generator')
+source=()
+sha256sums=()
+
+package() {
+  install -dm0755 "$pkgdir"
+  cp -a "$startdir/../archiso/airootfs/." "$pkgdir/"
+}

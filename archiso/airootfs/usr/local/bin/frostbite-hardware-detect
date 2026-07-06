@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+out="${1:-/var/lib/frostbite/hardware.env}"
+mkdir -p "$(dirname -- "$out")"
+
+ram_mib="$(awk '/MemTotal/ { printf "%d", $2 / 1024 }' /proc/meminfo)"
+cpu_cores="$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 1)"
+gpu_vendor="unknown"
+
+if command -v lspci >/dev/null 2>&1; then
+  gpu_lines="$(lspci -nn | grep -Ei 'vga|3d|display' || true)"
+  case "$gpu_lines" in
+    *NVIDIA*|*Nvidia*|*nvidia*) gpu_vendor="nvidia" ;;
+    *AMD*|*ATI*|*Radeon*|*Advanced\ Micro\ Devices*) gpu_vendor="amd" ;;
+    *Intel*|*intel*) gpu_vendor="intel" ;;
+  esac
+fi
+
+zram_mib="$ram_mib"
+if (( zram_mib > 8192 )); then
+  zram_mib=8192
+fi
+
+irqbalance="0"
+if (( cpu_cores >= 4 )); then
+  irqbalance="1"
+fi
+
+potato_mode="0"
+if grep -qw 'frostbite.potato=1' /proc/cmdline 2>/dev/null || [[ -f /etc/frostbite/potato-mode ]]; then
+  potato_mode="1"
+fi
+
+cat > "$out" <<ENV
+RAM_MIB=$ram_mib
+CPU_CORES=$cpu_cores
+GPU_VENDOR=$gpu_vendor
+ZRAM_MIB=$zram_mib
+IRQBALANCE=$irqbalance
+POTATO_MODE=$potato_mode
+ENV
+
+cat "$out"

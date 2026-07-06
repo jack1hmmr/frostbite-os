@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+target_user="$(awk -F: '$3 >= 1000 && $1 != "nobody" && $1 != "frostbite" { print $1; exit }' /etc/passwd)"
+target_user="${target_user:-frostbite}"
+
+mkdir -p /etc/systemd/system/getty@tty1.service.d
+cat > /etc/systemd/system/getty@tty1.service.d/autologin.conf <<CONF
+[Service]
+ExecStart=
+ExecStart=-/usr/bin/agetty --autologin $target_user --noclear %I \$TERM
+Type=idle
+CONF
+
+if home_dir="$(getent passwd "$target_user" | awk -F: '{ print $6 }')" && [[ -n "$home_dir" && -d "$home_dir" ]]; then
+  install -Dm0644 /etc/skel/.bash_profile "$home_dir/.bash_profile"
+  install -Dm0644 /etc/skel/.config/MangoHud/MangoHud.conf "$home_dir/.config/MangoHud/MangoHud.conf"
+  install -Dm0644 /etc/skel/.config/gamemode.ini "$home_dir/.config/gamemode.ini"
+  install -Dm0644 /etc/skel/.config/sway/config "$home_dir/.config/sway/config"
+  chown -R "$target_user:$target_user" "$home_dir/.bash_profile" "$home_dir/.config" 2>/dev/null || true
+fi
+
+/usr/local/bin/frostbite-hardware-detect /var/lib/frostbite/hardware.env >/dev/null 2>&1 || true
+
+systemctl enable NetworkManager.service fstrim.timer frostbite-firstboot.service frostbite-performance.service getty@tty1.service >/dev/null 2>&1 || true
+
+for unit in \
+  avahi-daemon.service avahi-daemon.socket \
+  bluetooth.service \
+  cups.service cups.socket cups.path \
+  ModemManager.service \
+  packagekit.service \
+  systemd-coredump.socket
+do
+  systemctl mask "$unit" >/dev/null 2>&1 || true
+done
+
+echo "Frostbite install finalized for autologin user: $target_user"

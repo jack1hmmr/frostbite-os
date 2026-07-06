@@ -1,0 +1,95 @@
+@define-color frostbite_bg #0a0a0c;
+@define-color frostbite_panel #121218;
+@define-color frostbite_panel_2 #1a1a22;
+@define-color frostbite_text #f2f2f2;
+@define-color frostbite_muted #c9c9d1;
+@define-color frostbite_accent #5b2a86;
+@define-color frostbite_accent_light #7a3fb0;
+@define-color frostbite_border #2a2a34;
+
+* {
+  -gtk-icon-theme: "Frostbite";
+  -gtk-font-name: "Noto Sans 10";
+  transition-duration: 0ms;
+  text-shadow: none;
+  box-shadow: none;
+}
+
+window,
+dialog,
+messagedialog,
+popover,
+tooltip,
+menu,
+.background {
+  background: @frostbite_bg;
+  color: @frostbite_text;
+}
+
+headerbar,
+toolbar,
+menubar,
+notebook > header,
+treeview,
+list,
+sidebar,
+.view {
+  background: @frostbite_panel;
+  color: @frostbite_text;
+  border-color: @frostbite_border;
+}
+
+button,
+entry,
+spinbutton,
+combobox,
+switch,
+scale trough {
+  background: @frostbite_panel_2;
+  color: @frostbite_text;
+  border: 1px solid @frostbite_border;
+  border-radius: 4px;
+  padding: 4px 8px;
+}
+
+button:hover,
+row:hover,
+menuitem:hover {
+  border-color: @frostbite_accent;
+  background: #202028;
+}
+
+button:checked,
+button:active,
+switch:checked,
+scale highlight,
+progressbar progress,
+selection,
+row:selected {
+  background: @frostbite_accent;
+  color: @frostbite_text;
+  border-color: @frostbite_accent_light;
+}
+
+entry:focus,
+button:focus,
+combobox:focus,
+treeview:focus,
+list:focus {
+  outline-color: @frostbite_accent_light;
+  outline-style: solid;
+  outline-width: 2px;
+  outline-offset: 1px;
+}
+
+scrollbar slider {
+  background: @frostbite_accent;
+  border-radius: 4px;
+  min-width: 6px;
+  min-height: 6px;
+}
+
+tooltip {
+  border: 1px solid @frostbite_accent;
+  border-radius: 4px;
+}

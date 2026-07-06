@@ -1,0 +1,5 @@
+# Keep controller access simple for the live user.
+KERNEL=="uinput", MODE="0660", GROUP="input", OPTIONS+="static_node=uinput"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="045e", MODE="0660", GROUP="input"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="054c", MODE="0660", GROUP="input"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="057e", MODE="0660", GROUP="input"

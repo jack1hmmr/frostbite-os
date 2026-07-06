@@ -1,0 +1,11 @@
+[Unit]
+Description=Frostbite OS first boot hardware tuning
+ConditionPathExists=!/var/lib/frostbite/firstboot.done
+After=multi-user.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/frostbite-firstboot
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+state_dir="/var/lib/frostbite"
+hardware_env="$state_dir/hardware.env"
+mkdir -p "$state_dir"
+
+/usr/local/bin/frostbite-hardware-detect "$hardware_env" >/dev/null
+# shellcheck disable=SC1090
+. "$hardware_env"
+
+cat > /etc/systemd/zram-generator.conf <<CONF
+[zram0]
+zram-size = min(ram, $ZRAM_MIB)
+compression-algorithm = lz4
+swap-priority = 100
+fs-type = swap
+CONF
+
+systemctl daemon-reload
+systemctl enable --now fstrim.timer >/dev/null 2>&1 || true
+systemctl enable --now NetworkManager.service >/dev/null 2>&1 || true
+
+if [[ "$IRQBALANCE" == "1" ]] && command -v irqbalance >/dev/null 2>&1; then
+  systemctl enable --now irqbalance.service >/dev/null 2>&1 || true
+else
+  systemctl disable --now irqbalance.service >/dev/null 2>&1 || true
+fi
+
+for unit in \
+  avahi-daemon.service avahi-daemon.socket \
+  bluetooth.service \
+  cups.service cups.socket cups.path \
+  ModemManager.service \
+  packagekit.service \
+  systemd-coredump.socket
+do
+  systemctl mask "$unit" >/dev/null 2>&1 || true
+done
+
+if [[ "$POTATO_MODE" == "1" ]]; then
+  /usr/local/bin/frostbite-performance potato || true
+else
+  /usr/local/bin/frostbite-performance balanced || true
+fi
+
+touch "$state_dir/firstboot.done"

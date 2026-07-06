@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+home_dir="${HOME:-}"
+if [[ -z "$home_dir" || ! -d "$home_dir" ]]; then
+  exit 0
+fi
+
+mkdir -p "$home_dir/.local/share/frostbite"
+install -Dm0644 /etc/steam/frostbite-launch-options.example "$home_dir/.local/share/frostbite/steam-launch-options.txt"
+
+compat_dir="$home_dir/.steam/root/compatibilitytools.d"
+mkdir -p "$compat_dir"
+
+if command -v protonup >/dev/null 2>&1 && [[ ! -e "$home_dir/.local/share/frostbite/proton-ge.done" ]]; then
+  if protonup -d "$compat_dir" -y GE-Proton >/dev/null 2>&1 || protonup -d "$compat_dir" -y >/dev/null 2>&1; then
+    touch "$home_dir/.local/share/frostbite/proton-ge.done"
+  fi
+fi
+
+if command -v xdg-user-dirs-update >/dev/null 2>&1; then
+  xdg-user-dirs-update >/dev/null 2>&1 || true
+fi

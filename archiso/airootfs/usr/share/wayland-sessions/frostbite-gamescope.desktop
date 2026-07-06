@@ -1,0 +1,6 @@
+[Desktop Entry]
+Name=Frostbite Gamescope
+Comment=Steam Big Picture through gamescope
+Exec=/usr/local/bin/frostbite-session
+Type=Application
+DesktopNames=Frostbite

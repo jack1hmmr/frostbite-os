@@ -1,0 +1,7 @@
+[Desktop Entry]
+Name=Frostbite Performance
+Comment=Toggle Frostbite OS performance profiles
+Exec=foot -e sh -lc 'printf "Profile [balanced/performance/battery/potato]: "; read -r p; frostbite-performance "${p:-balanced}"'
+Type=Application
+Categories=Settings;System;
+Terminal=false

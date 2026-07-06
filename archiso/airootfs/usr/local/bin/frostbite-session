@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [[ -r /etc/frostbite/gamescope.conf ]]; then
+  # shellcheck disable=SC1091
+  . /etc/frostbite/gamescope.conf
+fi
+
+GAMESCOPE_WIDTH="${GAMESCOPE_WIDTH:-1280}"
+GAMESCOPE_HEIGHT="${GAMESCOPE_HEIGHT:-720}"
+GAMESCOPE_REFRESH="${GAMESCOPE_REFRESH:-60}"
+GAMESCOPE_EXTRA_ARGS="${GAMESCOPE_EXTRA_ARGS:--f -e}"
+
+if [[ -f /etc/frostbite/potato-mode ]] || grep -qw 'frostbite.potato=1' /proc/cmdline 2>/dev/null; then
+  GAMESCOPE_WIDTH=960
+  GAMESCOPE_HEIGHT=540
+  export MANGOHUD=0
+fi
+
+frostbite-steam-setup >/dev/null 2>&1 || true
+
+if command -v gamescope >/dev/null 2>&1 && command -v steam >/dev/null 2>&1; then
+  # Word splitting is intentional for GAMESCOPE_EXTRA_ARGS.
+  # shellcheck disable=SC2086
+  exec gamescope -W "$GAMESCOPE_WIDTH" -H "$GAMESCOPE_HEIGHT" -r "$GAMESCOPE_REFRESH" $GAMESCOPE_EXTRA_ARGS -- steam -gamepadui
+fi
+
+exec sway

@@ -1,0 +1,14 @@
+# Default open driver stack for AMD and Intel systems.
+# NVIDIA is split out so the base ISO does not carry both GPU stacks.
+mesa
+lib32-mesa
+mesa-utils
+vulkan-radeon
+lib32-vulkan-radeon
+vulkan-intel
+lib32-vulkan-intel
+libva-mesa-driver
+lib32-libva-mesa-driver
+mesa-vdpau
+intel-media-driver
+intel-gpu-tools

@@ -1,0 +1,12 @@
+[Icon Theme]
+Name=Frostbite
+Comment=Minimal outline icons for Frostbite OS
+Inherits=hicolor
+Directories=symbolic/actions
+
+[symbolic/actions]
+Size=24
+Type=Scalable
+MinSize=16
+MaxSize=64
+Context=Actions

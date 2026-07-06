@@ -1,0 +1,11 @@
+[Unit]
+Description=Apply Frostbite OS balanced performance profile
+After=multi-user.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/frostbite-performance balanced
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

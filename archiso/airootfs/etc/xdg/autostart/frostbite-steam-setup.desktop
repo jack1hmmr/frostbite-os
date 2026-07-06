@@ -1,0 +1,6 @@
+[Desktop Entry]
+Name=Frostbite Steam Setup
+Exec=/usr/local/bin/frostbite-steam-setup
+Type=Application
+OnlyShowIn=sway;
+X-GNOME-Autostart-enabled=true

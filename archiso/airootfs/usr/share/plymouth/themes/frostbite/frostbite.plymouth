@@ -1,0 +1,8 @@
+[Plymouth Theme]
+Name=Frostbite
+Description=Static Frostbite OS boot splash
+ModuleName=script
+
+[script]
+ImageDir=/usr/share/plymouth/themes/frostbite
+ScriptFile=/usr/share/plymouth/themes/frostbite/frostbite.script

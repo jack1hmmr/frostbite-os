@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=X-GNOME-Metatheme
+Name=Frostbite
+Comment=Matte black, white, and dark purple Frostbite OS theme
+
+[X-GNOME-Metatheme]
+GtkTheme=Frostbite
+IconTheme=Frostbite
+CursorTheme=Adwaita
+ButtonLayout=appmenu:minimize,maximize,close

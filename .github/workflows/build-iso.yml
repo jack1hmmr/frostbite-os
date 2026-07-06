@@ -1,0 +1,41 @@
+name: build-iso
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "archiso/**"
+      - "calamares/**"
+      - "manifests/**"
+      - "scripts/**"
+      - "themes/**"
+      - ".github/workflows/build-iso.yml"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: archlinux:base-devel
+      options: --privileged
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: pacman -Syu --noconfirm --needed archiso git
+
+      - name: Validate tree
+        run: ./scripts/lint-tree.sh
+
+      - name: Build ISO
+        run: ./scripts/build-iso.sh
+
+      - name: Upload ISO
+        uses: actions/upload-artifact@v4
+        with:
+          name: frostbite-os-iso
+          path: out/*.iso
+          if-no-files-found: error

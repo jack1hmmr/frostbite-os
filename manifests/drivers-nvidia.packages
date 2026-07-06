@@ -1,0 +1,7 @@
+# Optional NVIDIA stack. Include this only for NVIDIA-specific builds or install
+# it during hardware detection on target machines.
+nvidia-dkms
+nvidia-utils
+lib32-nvidia-utils
+nvidia-settings
+opencl-nvidia

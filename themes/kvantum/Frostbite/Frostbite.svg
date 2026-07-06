@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" version="1.1">
+  <defs>
+    <style>
+      .bg { fill: #0a0a0c; }
+      .panel { fill: #1a1a22; stroke: #2a2a34; stroke-width: 1; }
+      .accent { fill: #5b2a86; stroke: #7a3fb0; stroke-width: 1; }
+      .line { fill: none; stroke: #f2f2f2; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    </style>
+  </defs>
+  <rect id="base" class="bg" x="0" y="0" width="64" height="64"/>
+  <rect id="button" class="panel" x="8" y="8" width="48" height="18" rx="4"/>
+  <rect id="button-pressed" class="accent" x="8" y="32" width="48" height="18" rx="4"/>
+  <path id="focus" class="line" d="M14 17h36M14 41h36"/>
+</svg>

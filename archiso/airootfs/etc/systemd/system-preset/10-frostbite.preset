@@ -1,0 +1,6 @@
+# Frostbite OS starts from the smallest useful service set.
+disable *
+enable NetworkManager.service
+enable fstrim.timer
+enable getty@tty1.service
+enable frostbite-firstboot.service

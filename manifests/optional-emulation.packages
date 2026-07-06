@@ -1,0 +1,6 @@
+# Optional post-install emulation pack.
+# Cores stay on demand; do not bundle a large multi-emulator payload.
+retroarch
+libretro-core-info
+pcsx2
+dolphin-emu

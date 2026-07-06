@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+profile="${1:-balanced}"
+
+if [[ "${EUID:-$(id -u)}" -ne 0 ]]; then
+  if command -v sudo >/dev/null 2>&1 && sudo -n true >/dev/null 2>&1; then
+    exec sudo /usr/local/bin/frostbite-performance "$profile"
+  fi
+  echo "Frostbite performance profile changes require root privileges." >&2
+  exit 0
+fi
+
+case "$profile" in
+  performance)
+    governor="performance"
+    epp="performance"
+    ;;
+  battery|powersave)
+    governor="powersave"
+    epp="balance_power"
+    profile="battery"
+    ;;
+  potato)
+    governor="schedutil"
+    epp="balance_power"
+    install -Dm0644 /dev/null /etc/frostbite/potato-mode
+    ;;
+  balanced)
+    governor="schedutil"
+    epp="balance_performance"
+    ;;
+  *)
+    echo "usage: frostbite-performance [balanced|performance|battery|potato]" >&2
+    exit 2
+    ;;
+esac
+
+for path in /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor; do
+  [[ -w "$path" ]] || continue
+  echo "$governor" > "$path" || true
+done
+
+for path in /sys/devices/system/cpu/cpu*/cpufreq/energy_performance_preference; do
+  [[ -w "$path" ]] || continue
+  echo "$epp" > "$path" || true
+done
+
+mkdir -p /run/frostbite
+printf '%s\n' "$profile" > /run/frostbite/performance-profile
+echo "Frostbite performance profile: $profile"

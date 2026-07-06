@@ -1,0 +1,18 @@
+set $mod Mod4
+set $term foot
+
+output * bg #0a0a0c solid_color
+font pango:Noto Sans 10
+
+default_border pixel 2
+client.focused #5b2a86 #0a0a0c #f2f2f2 #5b2a86 #5b2a86
+client.unfocused #1a1a20 #0a0a0c #c9c9d1 #1a1a20 #1a1a20
+
+bindsym $mod+Return exec $term
+bindsym $mod+d exec steam -gamepadui
+bindsym $mod+Shift+q kill
+bindsym $mod+Shift+r reload
+bindsym $mod+Shift+e exec swaynag -t warning -m "Exit Frostbite desktop?" -b "Exit" "swaymsg exit"
+
+exec_always systemctl --user import-environment DISPLAY WAYLAND_DISPLAY XDG_CURRENT_DESKTOP
+exec frostbite-steam-setup

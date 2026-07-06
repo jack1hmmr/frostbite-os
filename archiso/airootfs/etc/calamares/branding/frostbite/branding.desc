@@ -1,0 +1,22 @@
+---
+componentName: frostbite
+strings:
+  productName:         Frostbite OS
+  shortProductName:    Frostbite
+  version:             rolling
+  shortVersion:        rolling
+  versionedName:       Frostbite OS rolling
+  shortVersionedName:  Frostbite rolling
+  bootloaderEntryName: Frostbite OS
+images:
+  productLogo:         logo.svg
+  productIcon:         logo.svg
+style:
+  sidebarBackground:   "#0a0a0c"
+  sidebarText:         "#f2f2f2"
+  sidebarTextSelect:   "#ffffff"
+  sidebarTextHighlight: "#5b2a86"
+  windowBackground:    "#0a0a0c"
+  windowText:          "#f2f2f2"
+  sidebarTextCurrent:  "#ffffff"
+slideshow:             ""
