@@ -27,15 +27,6 @@ jobs:
       - name: Install build dependencies
         run: pacman -Syu --noconfirm --needed archiso git grub
 
-      - name: Add UEFI boot template
-        run: |
-          if [ ! -d archiso/efiboot ]; then
-            cp -r /usr/share/archiso/configs/releng/efiboot archiso/efiboot
-          fi
-          if [ ! -d archiso/grub ]; then
-            cp -r /usr/share/archiso/configs/releng/grub archiso/grub
-          fi
-
       - name: Validate tree
         run: ./scripts/lint-tree.sh
 
