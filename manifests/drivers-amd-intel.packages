@@ -9,6 +9,5 @@ vulkan-intel
 lib32-vulkan-intel
 libva-mesa-driver
 lib32-libva-mesa-driver
-mesa-vdpau
 intel-media-driver
 intel-gpu-tools

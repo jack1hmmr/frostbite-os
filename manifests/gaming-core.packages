@@ -1,7 +1,6 @@
 # Frostbite OS gaming core.
 # Steam is native, not Flatpak. Gamescope is the default console-like session.
 steam
-steam-native-runtime
 steam-devices
 gamescope
 gamemode
@@ -17,7 +16,6 @@ foot
 wl-clipboard
 xdg-desktop-portal
 xdg-desktop-portal-wlr
-protonup-qt
 python-vdf
 sdl2
 lib32-sdl2
