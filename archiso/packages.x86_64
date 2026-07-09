@@ -5,7 +5,6 @@ amd-ucode
 base
 bash-completion
 btrfs-progs
-calamares
 curl
 dbus
 dosfstools
@@ -42,8 +41,8 @@ man-pages
 mangohud
 mesa
 mesa-utils
-mesa-vdpau
 mkinitcpio
+mkinitcpio-archiso
 nano
 networkmanager
 noto-fonts
@@ -58,7 +57,6 @@ pipewire-alsa
 pipewire-jack
 pipewire-pulse
 polkit
-protonup-qt
 python-vdf
 rsync
 sdl2
@@ -67,7 +65,6 @@ smartmontools
 squashfs-tools
 steam
 steam-devices
-steam-native-runtime
 sudo
 sway
 systemd-sysvcompat
