@@ -19,5 +19,11 @@ fi
 "$repo_root/scripts/compose-packages.sh"
 "$repo_root/scripts/sync-assets.sh"
 
+# Keep grub.cfg's archisolabel in sync with profiledef.sh's iso_label,
+# since iso_label is date-based and grub.cfg is a static committed file.
+current_label="FROSTBITE_$(date +%Y%m)"
+sed -i "s/archisolabel=FROSTBITE_[0-9]\{6\}/archisolabel=${current_label}/g" "$profile/grub/grub.cfg"
+echo "synced grub.cfg archisolabel to ${current_label}"
+
 mkdir -p "$work_dir" "$out_dir"
 mkarchiso -v -w "$work_dir" -o "$out_dir" "$profile"
