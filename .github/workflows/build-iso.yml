@@ -33,6 +33,17 @@ jobs:
       - name: Build ISO
         run: ./scripts/build-iso.sh
 
+      - name: Debug initramfs contents
+        run: |
+          echo "--- mkinitcpio.d preset in airootfs ---"
+          cat archiso/airootfs/etc/mkinitcpio.d/linux-zen.preset || echo "MISSING preset"
+          echo "--- archiso.conf in airootfs ---"
+          cat archiso/airootfs/etc/mkinitcpio.conf.d/archiso.conf || echo "MISSING archiso.conf"
+          echo "--- searching for built initramfs ---"
+          find work -iname "initramfs-linux-zen.img" -exec echo {} \; -exec lsinitcpio -l {} \; 2>&1 | head -100
+          echo "--- searching pacstrap root for mkinitcpio-archiso package ---"
+          find work -path "*pacstrap*etc/mkinitcpio.d*" -o -path "*pacstrap*etc/mkinitcpio.conf.d*" 2>&1 | head -20
+
       - name: Upload ISO
         uses: actions/upload-artifact@v4
         with:
