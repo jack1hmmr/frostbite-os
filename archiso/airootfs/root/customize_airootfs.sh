@@ -12,6 +12,7 @@ systemctl enable fstrim.timer
 systemctl enable getty@tty1.service
 systemctl enable frostbite-firstboot.service
 systemctl enable frostbite-performance.service
+systemctl enable seatd.service
 
 for unit in \
   avahi-daemon.service avahi-daemon.socket \
