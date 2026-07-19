@@ -4,3 +4,4 @@ enable NetworkManager.service
 enable fstrim.timer
 enable getty@tty1.service
 enable frostbite-firstboot.service
+enable seatd.service
