@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-useradd -m -G wheel,video,audio,input,storage,power -s /bin/bash frostbite 2>/dev/null || true
+systemd-sysusers
+useradd -m -G wheel,video,audio,input,storage,power,seat -s /bin/bash frostbite
 echo 'frostbite:frostbite' | chpasswd
 passwd -d root >/dev/null 2>&1 || true
 
