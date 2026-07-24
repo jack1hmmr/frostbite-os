@@ -16,3 +16,8 @@ bindsym $mod+Shift+e exec swaynag -t warning -m "Exit Frostbite desktop?" -b "Ex
 
 exec_always systemctl --user import-environment DISPLAY WAYLAND_DISPLAY XDG_CURRENT_DESKTOP
 exec frostbite-steam-setup
+
+# Fallback session (used when the GPU can't run gamescope's Vulkan
+# compositor): auto-launch Steam in Big Picture mode so this still
+# feels like a console-style session instead of a bare desktop.
+exec steam -gamepadui

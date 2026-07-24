@@ -19,7 +19,15 @@ fi
 
 frostbite-steam-setup >/dev/null 2>&1 || true
 
-if command -v gamescope >/dev/null 2>&1 && command -v steam >/dev/null 2>&1; then
+# Check whether this GPU can actually drive Vulkan, not just whether
+# gamescope/steam are installed. Bay Trail-class and older GPUs report
+# "incomplete" Vulkan support and crash-loop gamescope, so we test the
+# real driver stack instead of guessing from installed packages alone.
+vulkan_works() {
+  command -v vulkaninfo >/dev/null 2>&1 && vulkaninfo --summary >/dev/null 2>&1
+}
+
+if command -v gamescope >/dev/null 2>&1 && command -v steam >/dev/null 2>&1 && vulkan_works; then
   # Word splitting is intentional for GAMESCOPE_EXTRA_ARGS.
   # shellcheck disable=SC2086
   exec gamescope -W "$GAMESCOPE_WIDTH" -H "$GAMESCOPE_HEIGHT" -r "$GAMESCOPE_REFRESH" $GAMESCOPE_EXTRA_ARGS -- steam -gamepadui
