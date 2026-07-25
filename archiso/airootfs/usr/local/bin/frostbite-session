@@ -19,15 +19,15 @@ fi
 
 frostbite-steam-setup >/dev/null 2>&1 || true
 
-# Check whether this GPU can actually drive Vulkan, not just whether
-# gamescope/steam are installed. Bay Trail-class and older GPUs report
-# "incomplete" Vulkan support and crash-loop gamescope, so we test the
-# real driver stack instead of guessing from installed packages alone.
-vulkan_works() {
-  command -v vulkaninfo >/dev/null 2>&1 && vulkaninfo --summary >/dev/null 2>&1
-}
+# Session mode is decided once, at first boot, by frostbite-firstboot
+# (see /var/lib/frostbite/session-mode-detect.log for why). We just
+# read that decision here instead of re-probing Vulkan on every login.
+session_mode="sway"
+if [[ -r /etc/frostbite/session-mode ]]; then
+  session_mode="$(cat /etc/frostbite/session-mode)"
+fi
 
-if command -v gamescope >/dev/null 2>&1 && command -v steam >/dev/null 2>&1 && vulkan_works; then
+if [[ "$session_mode" == "gamescope" ]] && command -v gamescope >/dev/null 2>&1 && command -v steam >/dev/null 2>&1; then
   # Word splitting is intentional for GAMESCOPE_EXTRA_ARGS.
   # shellcheck disable=SC2086
   exec gamescope -W "$GAMESCOPE_WIDTH" -H "$GAMESCOPE_HEIGHT" -r "$GAMESCOPE_REFRESH" $GAMESCOPE_EXTRA_ARGS -- steam -gamepadui

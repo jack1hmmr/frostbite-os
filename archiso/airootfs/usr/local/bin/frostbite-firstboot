@@ -44,4 +44,55 @@ else
   /usr/local/bin/frostbite-performance balanced || true
 fi
 
+# --- Session mode detection (one-time, decided here, not re-checked at every login) ---
+# Some GPUs (notably pre-2016 Intel like Bay Trail) report Vulkan support
+# that "exists" but is incomplete enough to crash-loop gamescope's Vulkan
+# compositor. We probe once, log everything to a permanent file so it can
+# be reviewed even after a crash-loop reboot, and write a simple decision
+# that frostbite-session just reads instead of re-probing every boot.
+
+session_log="$state_dir/session-mode-detect.log"
+session_mode_file="/etc/frostbite/session-mode"
+mkdir -p /etc/frostbite
+
+{
+  echo "=== Frostbite session mode detection: $(date -Iseconds) ==="
+  echo "GPU_VENDOR=$GPU_VENDOR"
+
+  vulkan_ok=1
+
+  if ! command -v gamescope >/dev/null 2>&1; then
+    echo "gamescope binary not found -> sway"
+    vulkan_ok=0
+  elif ! command -v vulkaninfo >/dev/null 2>&1; then
+    echo "vulkaninfo binary not found -> sway"
+    vulkan_ok=0
+  else
+    vk_out="$(vulkaninfo --summary 2>&1)"
+    vk_rc=$?
+    echo "vulkaninfo exit code: $vk_rc"
+    echo "--- vulkaninfo output ---"
+    echo "$vk_out"
+    echo "--- end vulkaninfo output ---"
+
+    if [[ $vk_rc -ne 0 ]]; then
+      echo "vulkaninfo failed (nonzero exit) -> sway"
+      vulkan_ok=0
+    elif echo "$vk_out" | grep -qiE "ERROR|no devices|incomplete|not supported"; then
+      echo "vulkaninfo output contains a failure/incomplete marker -> sway"
+      vulkan_ok=0
+    else
+      echo "vulkaninfo looks clean"
+    fi
+  fi
+
+  if [[ "$vulkan_ok" == "1" ]]; then
+    echo "DECISION: gamescope"
+    echo "gamescope" > "$session_mode_file"
+  else
+    echo "DECISION: sway"
+    echo "sway" > "$session_mode_file"
+  fi
+} > "$session_log" 2>&1 || true
+
 touch "$state_dir/firstboot.done"
