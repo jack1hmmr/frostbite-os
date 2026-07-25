@@ -27,10 +27,15 @@ if [[ -r /etc/frostbite/session-mode ]]; then
   session_mode="$(cat /etc/frostbite/session-mode)"
 fi
 
+# -no-cef-sandbox works around a known Steam-on-Linux crash where the
+# Chromium Embedded Framework sandbox triggers an assertion failure on
+# some systems. See ArchWiki Steam/Troubleshooting.
+STEAM_FLAGS="-gamepadui -no-cef-sandbox"
+
 if [[ "$session_mode" == "gamescope" ]] && command -v gamescope >/dev/null 2>&1 && command -v steam >/dev/null 2>&1; then
-  # Word splitting is intentional for GAMESCOPE_EXTRA_ARGS.
+  # Word splitting is intentional for GAMESCOPE_EXTRA_ARGS and STEAM_FLAGS.
   # shellcheck disable=SC2086
-  exec gamescope -W "$GAMESCOPE_WIDTH" -H "$GAMESCOPE_HEIGHT" -r "$GAMESCOPE_REFRESH" $GAMESCOPE_EXTRA_ARGS -- steam -gamepadui
+  exec gamescope -W "$GAMESCOPE_WIDTH" -H "$GAMESCOPE_HEIGHT" -r "$GAMESCOPE_REFRESH" $GAMESCOPE_EXTRA_ARGS -- steam $STEAM_FLAGS
 fi
 
 exec sway
