@@ -1,0 +1,73 @@
+#!/usr/bin/env bash
+# One-shot diagnostic dump. Run this instead of typing individual
+# commands one at a time when something's not working.
+set -uo pipefail
+
+out="/tmp/frostbite-debug-$(date +%Y%m%d-%H%M%S).log"
+
+{
+  echo "=== Frostbite debug dump: $(date -Iseconds) ==="
+
+  echo ""
+  echo "--- Session mode decision ---"
+  if [[ -r /etc/frostbite/session-mode ]]; then
+    echo "Current mode: $(cat /etc/frostbite/session-mode)"
+  else
+    echo "No session-mode file found"
+  fi
+  if [[ -r /var/lib/frostbite/session-mode-detect.log ]]; then
+    echo "--- session-mode-detect.log ---"
+    cat /var/lib/frostbite/session-mode-detect.log
+  fi
+
+  echo ""
+  echo "--- Hardware detection ---"
+  if [[ -r /var/lib/frostbite/hardware.env ]]; then
+    cat /var/lib/frostbite/hardware.env
+  else
+    echo "No hardware.env found"
+  fi
+
+  echo ""
+  echo "--- Steam process ---"
+  ps aux | grep -i steam | grep -v grep || echo "No steam process running"
+
+  echo ""
+  echo "--- Steam crash dumps ---"
+  if [[ -d /tmp/dumps ]]; then
+    ls -la /tmp/dumps/ 2>&1
+  else
+    echo "No /tmp/dumps directory"
+  fi
+  find "$HOME/.local/share/Steam" -iname "*.log" 2>/dev/null -exec echo "Found log: {}" \;
+
+  echo ""
+  echo "--- Recent failed systemd units ---"
+  systemctl --failed --no-pager 2>&1
+
+  echo ""
+  echo "--- seatd status ---"
+  systemctl status seatd.service --no-pager 2>&1 | head -10
+
+  echo ""
+  echo "--- Network ---"
+  nmcli -t -f NAME,DEVICE,STATE connection show 2>&1
+  ping -c 1 -W 3 archlinux.org >/dev/null 2>&1 && echo "internet: OK" || echo "internet: FAILED"
+
+  echo ""
+  echo "--- Disk / RAM ---"
+  df -h / 2>&1
+  free -h 2>&1
+
+  echo ""
+  echo "--- Last 40 journal lines (this boot) ---"
+  journalctl -b --no-pager 2>&1 | tail -40
+
+} > "$out" 2>&1
+
+echo "Debug dump saved to: $out"
+echo ""
+echo "=== Quick summary ==="
+grep -E "Current mode:|internet:|No steam process|steam" "$out" | grep -iv "journalctl\|systemctl" | head -10
+echo ""
+echo "Run 'cat $out' to see everything, or 'less $out' to page through it."
