@@ -1,6 +1,7 @@
 [Unit]
 Description=Apply Frostbite OS balanced performance profile
-After=multi-user.target
+ConditionPathExists=!/etc/frostbite/potato-mode
+After=multi-user.target frostbite-firstboot.service
 
 [Service]
 Type=oneshot
