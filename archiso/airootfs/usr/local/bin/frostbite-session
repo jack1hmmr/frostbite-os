@@ -1,6 +1,16 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# XDG_RUNTIME_DIR should normally be set by systemd-logind/pam_systemd
+# at login, but TTY autologin can bypass that path and leave it unset,
+# which breaks Wayland, D-Bus, and Steam's own runtime. Set it
+# explicitly if it's missing or doesn't point at a real directory.
+if [[ -z "${XDG_RUNTIME_DIR:-}" ]] || [[ ! -d "$XDG_RUNTIME_DIR" ]]; then
+  export XDG_RUNTIME_DIR="/run/user/$(id -u)"
+  mkdir -p "$XDG_RUNTIME_DIR"
+  chmod 700 "$XDG_RUNTIME_DIR"
+fi
+
 if [[ -r /etc/frostbite/gamescope.conf ]]; then
   # shellcheck disable=SC1091
   . /etc/frostbite/gamescope.conf
