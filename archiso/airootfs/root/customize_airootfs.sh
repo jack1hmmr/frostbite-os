@@ -9,6 +9,7 @@ passwd -d root >/dev/null 2>&1 || true
 chmod 0440 /etc/sudoers.d/10-frostbite-live
 
 systemctl enable NetworkManager.service
+systemctl enable NetworkManager-wait-online.service
 systemctl enable fstrim.timer
 systemctl enable getty@tty1.service
 systemctl enable frostbite-firstboot.service
