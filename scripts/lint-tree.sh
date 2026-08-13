@@ -37,8 +37,8 @@ if (( ${#live_boot_entries[@]} == 0 )); then
 fi
 
 for entry in "${live_boot_entries[@]}"; do
-  if [[ "$entry" != *" cow_spacesize=1536M"* ]]; then
-    echo "live boot entry is missing cow_spacesize=1536M: $entry" >&2
+  if [[ "$entry" != *" cow_spacesize=3072M"* ]]; then
+    echo "live boot entry is missing cow_spacesize=3072M: $entry" >&2
     exit 1
   fi
 done
