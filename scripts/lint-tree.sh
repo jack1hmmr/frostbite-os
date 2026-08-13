@@ -8,6 +8,7 @@ required=(
   "$repo_root/archiso/profiledef.sh"
   "$repo_root/archiso/pacman.conf"
   "$repo_root/archiso/packages.x86_64"
+  "$repo_root/archiso/grub/grub.cfg"
   "$repo_root/archiso/airootfs/usr/local/bin/frostbite-firstboot"
   "$repo_root/archiso/airootfs/usr/local/bin/frostbite-hardware-detect"
   "$repo_root/archiso/airootfs/usr/local/bin/frostbite-performance"
@@ -21,6 +22,23 @@ required=(
 for path in "${required[@]}"; do
   if [[ ! -e "$path" ]]; then
     echo "missing: $path" >&2
+    exit 1
+  fi
+done
+
+grub_cfg="$repo_root/archiso/grub/grub.cfg"
+mapfile -t live_boot_entries < <(
+  grep -E '^[[:space:]]+linux /frostbite/boot/x86_64/vmlinuz-linux-zen ' "$grub_cfg"
+)
+
+if (( ${#live_boot_entries[@]} == 0 )); then
+  echo "missing Frostbite live boot entry: $grub_cfg" >&2
+  exit 1
+fi
+
+for entry in "${live_boot_entries[@]}"; do
+  if [[ "$entry" != *" cow_spacesize=1536M"* ]]; then
+    echo "live boot entry is missing cow_spacesize=1536M: $entry" >&2
     exit 1
   fi
 done
