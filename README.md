@@ -79,6 +79,12 @@ The live system includes:
 - `frostbite-session`: starts Steam Big Picture through gamescope, then falls back to Sway if needed.
 - `frostbite-steam-setup`: creates Steam compatibility directories and a launch-options reference using `gamemoderun %command%`.
 
+The live image raises Archiso's RAM-backed writable-overlay limit from the
+256 MiB default to 3072 MiB so Steam can unpack client and runtime updates. The
+overlay grows on demand, but its contents remain ephemeral and still consume
+RAM or swap when written. Use an installed system or a disk-backed Steam library
+for games that need substantial storage.
+
 ## Potato Mode
 
 Enable Potato Mode by either creating `/etc/frostbite/potato-mode` or booting with:

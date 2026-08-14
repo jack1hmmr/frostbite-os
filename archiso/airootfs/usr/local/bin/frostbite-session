@@ -48,4 +48,5 @@ if [[ "$session_mode" == "gamescope" ]] && command -v gamescope >/dev/null 2>&1 
   exec gamescope -W "$GAMESCOPE_WIDTH" -H "$GAMESCOPE_HEIGHT" -r "$GAMESCOPE_REFRESH" $GAMESCOPE_EXTRA_ARGS -- steam $STEAM_FLAGS
 fi
 
+export XDG_CURRENT_DESKTOP=sway
 exec sway
