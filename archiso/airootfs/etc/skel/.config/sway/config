@@ -1,5 +1,6 @@
 set $mod Mod4
 set $term foot
+set $steam frostbite-steam-launch
 
 output * bg #0a0a0c solid_color
 font pango:Noto Sans 10
@@ -9,17 +10,18 @@ client.focused #5b2a86 #0a0a0c #f2f2f2 #5b2a86 #5b2a86
 client.unfocused #1a1a20 #0a0a0c #c9c9d1 #1a1a20 #1a1a20
 
 bindsym $mod+Return exec $term
-bindsym $mod+d exec steam -gamepadui -no-cef-sandbox
+bindsym $mod+d exec $steam
 bindsym $mod+Shift+q kill
 bindsym $mod+Shift+r reload
 bindsym $mod+Shift+e exec swaynag -t warning -m "Exit Frostbite desktop?" -b "Exit" "swaymsg exit"
 
-exec_always systemctl --user import-environment DISPLAY WAYLAND_DISPLAY XDG_CURRENT_DESKTOP
-exec frostbite-steam-setup
+# Load Arch's Sway session integration, including the environment update for
+# D-Bus/systemd user services. Frostbite's custom config otherwise bypasses it.
+include /etc/sway/config.d/*
 
 # Fallback session (used when the GPU can't run gamescope's Vulkan
 # compositor): auto-launch Steam in Big Picture mode so this still
 # feels like a console-style session instead of a bare desktop.
-# -no-cef-sandbox works around a known Steam-on-Linux assertion crash
-# in the Chromium Embedded Framework sandbox (see ArchWiki Steam/Troubleshooting).
-exec steam -gamepadui -no-cef-sandbox
+# The launcher synchronously refreshes the activation environment before Steam
+# starts and retains the Chromium Embedded Framework sandbox workaround.
+exec $steam

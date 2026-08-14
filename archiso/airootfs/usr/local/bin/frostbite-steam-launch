@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Sway creates these display variables after the compositor starts. Upload
+# them before Steam so D-Bus/systemd-activated helpers retain Xwayland access.
+export XDG_CURRENT_DESKTOP=sway
+if ! dbus-update-activation-environment --systemd \
+  DISPLAY WAYLAND_DISPLAY SWAYSOCK XDG_CURRENT_DESKTOP XAUTHORITY
+then
+  echo "warning: failed to update the desktop activation environment" >&2
+fi
+
+frostbite-steam-setup >/dev/null 2>&1 || true
+exec steam -gamepadui -no-cef-sandbox "$@"

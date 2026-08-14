@@ -21,6 +21,7 @@ file_permissions=(
   ["/usr/local/bin/frostbite-install-finalize"]="0:0:755"
   ["/usr/local/bin/frostbite-performance"]="0:0:755"
   ["/usr/local/bin/frostbite-session"]="0:0:755"
+  ["/usr/local/bin/frostbite-steam-launch"]="0:0:755"
   ["/usr/local/bin/frostbite-steam-setup"]="0:0:755"
   ["/usr/local/bin/frostbite-debug"]="0:0:755"
   ["/etc/sudoers.d/10-frostbite-live"]="0:0:440"
