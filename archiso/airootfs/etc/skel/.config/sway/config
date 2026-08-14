@@ -2,6 +2,10 @@ set $mod Mod4
 set $term foot
 set $steam frostbite-steam-launch
 
+# Steam always needs X11 compatibility in this fallback session. Starting
+# Xwayland eagerly reduces cold-start delay and surfaces failures sooner.
+xwayland force
+
 output * bg #0a0a0c solid_color
 font pango:Noto Sans 10
 

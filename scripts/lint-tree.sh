@@ -52,6 +52,11 @@ if ! grep -Fqx 'include /etc/sway/config.d/*' "$sway_cfg"; then
   exit 1
 fi
 
+if ! grep -Fqx 'xwayland force' "$sway_cfg"; then
+  echo "Sway config does not start Xwayland eagerly for Steam: $sway_cfg" >&2
+  exit 1
+fi
+
 if ! grep -Fqx 'set $steam frostbite-steam-launch' "$sway_cfg" || \
    ! grep -Fqx 'bindsym $mod+d exec $steam' "$sway_cfg" || \
    ! grep -Fqx 'exec $steam' "$sway_cfg"
