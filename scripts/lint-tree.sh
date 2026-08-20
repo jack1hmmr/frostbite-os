@@ -247,7 +247,7 @@ for required_vm_token in \
   screendump input-send-event tesseract 'Start Frostbite OS[\s\S]*Install Frostbite OS' \
   'Erase disk' destructive-summary \
   'all done' 'has been installed' central-inverted FROSTBITE_VM_AUDIT_PASSWORD_READY \
-  TEXT_KEY_DELAY
+  TEXT_KEY_DELAY POINTER_EVENT_DELAY
 do
   if ! grep -Fq "$required_vm_token" "$vm_driver"; then
     echo "stateful VM driver is missing contract token: $required_vm_token" >&2

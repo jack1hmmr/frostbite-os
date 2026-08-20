@@ -25,6 +25,7 @@ from typing import Iterable, Sequence
 
 SCREENSHOT_INTERVAL = 1.5
 TEXT_KEY_DELAY = 0.04
+POINTER_EVENT_DELAY = 0.1
 ABS_MAX = 0x7FFF
 
 
@@ -369,17 +370,30 @@ class Driver:
                 y = state.crop_y + ((top + bottom) / 2) / state.scale
                 abs_x = max(0, min(ABS_MAX, round(x * ABS_MAX / (state.width - 1))))
                 abs_y = max(0, min(ABS_MAX, round(y * ABS_MAX / (state.height - 1))))
+                # QMP acknowledges injected events before Sway and Qt have
+                # necessarily consumed them. Deliver pointer motion, press,
+                # and release as distinct commands so the guest observes a
+                # real click instead of a collapsed same-batch transition.
                 self.qmp.execute(
                     "input-send-event",
                     {
                         "events": [
                             {"type": "abs", "data": {"axis": "x", "value": abs_x}},
                             {"type": "abs", "data": {"axis": "y", "value": abs_y}},
-                            {"type": "btn", "data": {"down": True, "button": "left"}},
-                            {"type": "btn", "data": {"down": False, "button": "left"}},
                         ]
                     },
                 )
+                time.sleep(POINTER_EVENT_DELAY)
+                self.qmp.execute(
+                    "input-send-event",
+                    {"events": [{"type": "btn", "data": {"down": True, "button": "left"}}]},
+                )
+                time.sleep(POINTER_EVENT_DELAY)
+                self.qmp.execute(
+                    "input-send-event",
+                    {"events": [{"type": "btn", "data": {"down": False, "button": "left"}}]},
+                )
+                time.sleep(POINTER_EVENT_DELAY)
                 return
         raise DriverError(f"could not locate clickable OCR phrase {phrase!r}; OCR={normalized(state.text)!r}")
 
