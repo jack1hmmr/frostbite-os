@@ -33,9 +33,6 @@ jobs:
       options: --privileged
 
     steps:
-      - name: Check out repository
-        uses: actions/checkout@v4
-
       - name: Install package and ISO build dependencies
         run: |
           pacman -Syu --noconfirm --needed \
@@ -43,6 +40,9 @@ jobs:
             kcoreaddons kpmcore libpwquality mkinitcpio namcap ninja parted polkit \
             polkit-qt6 python python-yaml qemu-base qt6-base qt6-svg qt6-tools \
             squashfs-tools tesseract tesseract-data-eng xorriso yaml-cpp
+
+      - name: Check out repository
+        uses: actions/checkout@v4
 
       - name: Validate tree
         run: |
