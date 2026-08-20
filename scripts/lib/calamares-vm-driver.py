@@ -420,12 +420,20 @@ def install(driver: Driver, serial_log: Path) -> None:
     # that remain fully visible instead of waiting on cropped page chrome.
     driver.wait_text("location", (r"zone", r"chicago", r"american english"))
     driver.shortcut("alt", "n")
-    driver.wait_text("keyboard", (r"keyboard", r"model", r"layout"))
+    driver.wait_text("keyboard", (r"generic 105 key pc", r"english colemak", r"english dvorak"))
     driver.shortcut("alt", "n")
 
-    partition = driver.wait_text("partition-choice", (r"partitions", r"erase disk"), timeout=300)
+    partition = driver.wait_text(
+        "partition-choice",
+        (r"select storage device", r"erase disk", r"delete all data"),
+        timeout=300,
+    )
     driver.click_phrase(partition, "Erase disk")
-    driver.wait_text("partition-erase-selected", (r"erase disk", r"ext4", r"no swap"), timeout=120)
+    # With a single forced no-swap choice Calamares intentionally hides the
+    # swap combobox, so the page cannot display a "No swap" label. Verify the
+    # selected erase preview here; configuration and the installed-disk audit
+    # independently enforce the absence of swap.
+    driver.wait_text("partition-erase-selected", (r"erase disk", r"after", r"efi", r"ext4"), timeout=120)
     driver.shortcut("alt", "n")
 
     users = driver.wait_text("users", (r"what is your name", r"your full name", r"password"))
