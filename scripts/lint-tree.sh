@@ -144,9 +144,10 @@ done
 
 session_launcher="$repo_root/archiso/airootfs/usr/local/bin/frostbite-session"
 if ! grep -Fq "grep -qw 'frostbite.install=1' /proc/cmdline" "$session_launcher" || \
+   ! grep -Fqx '  export WLR_RENDERER_ALLOW_SOFTWARE=1' "$session_launcher" || \
    ! grep -Fqx '  exec sway --config "$installer_sway_config"' "$session_launcher"
 then
-  echo "the installer boot flag does not force the dedicated safe Sway path" >&2
+  echo "the installer boot flag does not force the dedicated recoverable Sway path" >&2
   exit 1
 fi
 

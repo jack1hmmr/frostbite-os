@@ -279,9 +279,10 @@ def validate() -> None:
         "dedicated installer Sway config must be root-owned mode 0644",
     )
     require(
-        "exec sway --config \"$installer_sway_config\"" in session_script
+        "export WLR_RENDERER_ALLOW_SOFTWARE=1" in session_script
+        and "exec sway --config \"$installer_sway_config\"" in session_script
         and f'installer_sway_config="{installer_sway_path}"' in session_script,
-        "the dedicated boot mode must use the isolated installer Sway config",
+        "the dedicated boot mode must keep its recoverable isolated Sway path",
     )
     require(
         "set $installer frostbite-installer" in installer_sway

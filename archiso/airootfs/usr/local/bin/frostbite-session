@@ -31,6 +31,9 @@ if grep -qw 'frostbite.install=1' /proc/cmdline 2>/dev/null; then
     exit 1
   }
   export XDG_CURRENT_DESKTOP=sway
+  # Prefer the hardware renderer, but keep the offline installer reachable on
+  # 2D-only and recovery GPUs where wlroots would otherwise reject llvmpipe.
+  export WLR_RENDERER_ALLOW_SOFTWARE=1
   exec sway --config "$installer_sway_config"
 fi
 
