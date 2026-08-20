@@ -425,7 +425,7 @@ def install(driver: Driver, serial_log: Path) -> None:
 
     partition = driver.wait_text(
         "partition-choice",
-        (r"select storage device", r"erase disk", r"delete all data"),
+        (r"erase disk", r"delete all data", r"selected storage device"),
         timeout=300,
     )
     driver.click_phrase(partition, "Erase disk")
