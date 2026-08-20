@@ -35,11 +35,13 @@ jobs:
     steps:
       - name: Install package and ISO build dependencies
         run: |
+          # Arch splits virtio-vga's frontend and base GPU QEMU modules; both
+          # are required or QEMU 11 can segfault while creating the device.
           pacman -Syu --noconfirm --needed \
             archiso base-devel cmake edk2-ovmf extra-cmake-modules git grub imagemagick \
             kcoreaddons kpmcore libpwquality mkinitcpio namcap ninja parted polkit \
-            polkit-qt6 python python-yaml qemu-base qemu-hw-display-virtio-vga \
-            qt6-base qt6-svg qt6-tools \
+            polkit-qt6 python python-yaml qemu-base qemu-hw-display-virtio-gpu \
+            qemu-hw-display-virtio-vga qt6-base qt6-svg qt6-tools \
             squashfs-tools tesseract tesseract-data-eng xorriso yaml-cpp
 
       - name: Check out repository
