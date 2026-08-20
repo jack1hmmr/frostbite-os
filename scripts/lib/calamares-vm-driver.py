@@ -415,7 +415,10 @@ def install(driver: Driver, serial_log: Path) -> None:
 
     driver.wait_text("welcome", (r"welcome", r"frostbite"), timeout=300)
     driver.shortcut("alt", "n")
-    driver.wait_text("location", (r"location", r"region", r"zone"))
+    # The central OCR crop intentionally excludes the left navigation rail and
+    # clips the Region label at 1280x800. Match the configured location fields
+    # that remain fully visible instead of waiting on cropped page chrome.
+    driver.wait_text("location", (r"zone", r"chicago", r"american english"))
     driver.shortcut("alt", "n")
     driver.wait_text("keyboard", (r"keyboard", r"model", r"layout"))
     driver.shortcut("alt", "n")
