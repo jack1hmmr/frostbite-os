@@ -193,16 +193,14 @@ start_vm() {
     disk_bootindex="2"
   fi
   local qmp_socket="$vm_dir/$phase.qmp.sock"
-  local vnc_socket="$vm_dir/$phase.vnc.sock"
   local serial_log="$evidence_dir/$phase-serial.log"
   local qemu_log="$evidence_dir/$phase-qemu.log"
 
   [[ -f "$vars_path" && ! -L "$vars_path" ]] || die "unsafe OVMF vars for $phase"
-  [[ ! -e "$qmp_socket" && ! -e "$vnc_socket" ]] || die "stale control socket for $phase"
+  [[ ! -e "$qmp_socket" ]] || die "stale control socket for $phase"
   validate_qemu_path "$vars_path" "$phase OVMF vars"
   validate_qemu_path "$target_disk" "$phase target disk"
   validate_qemu_path "$qmp_socket" "$phase QMP socket"
-  validate_qemu_path "$vnc_socket" "$phase VNC socket"
   validate_qemu_path "$serial_log" "$phase serial log"
   [[ "$(realpath -e -- "$vars_path")" == "$vm_dir"/* ]] || die "$phase OVMF vars escaped VM temporary directory"
   [[ "$(realpath -e -- "$target_disk")" == "$vm_dir"/* ]] || die "$phase target escaped VM temporary directory"
@@ -220,7 +218,6 @@ start_vm() {
     -rtc base=utc
     -monitor none
     -display none
-    -vnc "unix:$vnc_socket"
     -qmp "unix:$qmp_socket,server=on,wait=off"
     -chardev "file,id=serial0,path=$serial_log"
     -device isa-serial,chardev=serial0
