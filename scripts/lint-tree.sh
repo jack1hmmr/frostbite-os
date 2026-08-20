@@ -129,6 +129,18 @@ then
   echo "GRUB must expose exactly one dedicated Frostbite installer entry" >&2
   exit 1
 fi
+installer_kernel_line="$(grep -E '^[[:space:]]+linux .*frostbite\.install=1([[:space:]]|$)' "$grub_cfg")"
+for installer_boot_token in \
+  'systemd.mask=frostbite-firstboot.service' \
+  'systemd.mask=NetworkManager-wait-online.service' \
+  'console=ttyS0,115200n8' \
+  'console=tty0'
+do
+  if [[ "$installer_kernel_line" != *"$installer_boot_token"* ]]; then
+    echo "dedicated installer boot entry is missing: $installer_boot_token" >&2
+    exit 1
+  fi
+done
 
 session_launcher="$repo_root/archiso/airootfs/usr/local/bin/frostbite-session"
 if ! grep -Fq "grep -qw 'frostbite.install=1' /proc/cmdline" "$session_launcher" || \

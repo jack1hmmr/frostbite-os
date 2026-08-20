@@ -11,9 +11,11 @@ partition, and use the remainder as one ext4 root filesystem.
   is absent.
 - GRUB has a dedicated `frostbite.install=1` entry which forces Sway and opens
   Calamares, so installer reachability does not depend on GPU capability. That
-  entry uses a live-only Sway configuration with no window-kill, reload, or
-  compositor-exit shortcut, preventing an accidental key chord from aborting
-  the destructive phase. The ordinary Steam desktop remains unchanged.
+  offline entry masks live hardware tuning and network-online waiting, retains
+  both graphical and serial boot consoles, and uses a live-only Sway
+  configuration with no window-kill, reload, or compositor-exit shortcut.
+  This prevents an accidental key chord from aborting the destructive phase.
+  The ordinary Steam desktop remains unchanged.
 - Whole-disk erase only. Alongside, replace-partition, manual partitioning,
   LVM, encryption, swap partitions, swap files, and non-ext4 roots are not
   offered by this release.
