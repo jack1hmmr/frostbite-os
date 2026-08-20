@@ -15,6 +15,7 @@ on:
   push:
     branches:
       - main
+      - "agent/**"
     paths:
       - "archiso/**"
       - "calamares/**"
