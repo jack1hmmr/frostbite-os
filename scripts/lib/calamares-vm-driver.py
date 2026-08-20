@@ -326,6 +326,7 @@ class Driver:
             "_": ("minus", ("shift",)),
             ".": ("dot", ()),
             "/": ("slash", ()),
+            "|": ("backslash", ("shift",)),
             "&": ("7", ("shift",)),
         }
         for character in value:
@@ -403,11 +404,61 @@ def boot_installer(driver: Driver, serial_log: Path) -> None:
     driver.key("ret")
 
 
+def collect_installer_startup_diagnostics(driver: Driver, serial_log: Path) -> None:
+    """Copy tagged Sway startup logs to retained serial evidence after failure."""
+
+    try:
+        driver.wait_text_with_action(
+            "installer-diagnostics-login",
+            (r"frostbite login",),
+            lambda: driver.key("f2", "ctrl", "alt"),
+            timeout=120,
+            action_interval=4,
+            central=False,
+        )
+        driver.line("frostbite")
+        driver.wait_text(
+            "installer-diagnostics-password",
+            (r"password",),
+            timeout=60,
+            central=False,
+            reject=(),
+        )
+        driver.line("frostbite")
+        driver.wait_text(
+            "installer-diagnostics-shell",
+            (r"frostbite frostbite",),
+            timeout=90,
+            central=False,
+            reject=(r"login incorrect",),
+        )
+        driver.line(
+            "echo FROSTBITE_INSTALLER_DIAGNOSTICS_BEGIN | sudo tee /dev/ttyS0"
+        )
+        driver.line(
+            "sudo journalctl -b -t frostbite-installer --no-pager -n 250 | sudo tee -a /dev/ttyS0"
+        )
+        driver.line(
+            "echo FROSTBITE_INSTALLER_DIAGNOSTICS_END | sudo tee -a /dev/ttyS0"
+        )
+        wait_file_text(serial_log, r"FROSTBITE_INSTALLER_DIAGNOSTICS_END", 90)
+    except (DriverError, OSError, subprocess.SubprocessError) as diagnostic_error:
+        # Diagnostics must never hide the original graphical-startup failure.
+        print(
+            f"could not collect installer startup diagnostics: {diagnostic_error}",
+            file=sys.stderr,
+        )
+
+
 def install(driver: Driver, serial_log: Path) -> None:
     password = env_password()
     boot_installer(driver, serial_log)
 
-    driver.wait_text("welcome", (r"welcome", r"frostbite"), timeout=300)
+    try:
+        driver.wait_text("welcome", (r"welcome", r"frostbite"), timeout=300)
+    except DriverError:
+        collect_installer_startup_diagnostics(driver, serial_log)
+        raise
     driver.shortcut("alt", "n")
     driver.wait_text("location", (r"location", r"region", r"zone"))
     driver.shortcut("alt", "n")

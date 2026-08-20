@@ -31,10 +31,14 @@ if grep -qw 'frostbite.install=1' /proc/cmdline 2>/dev/null; then
     exit 1
   }
   export XDG_CURRENT_DESKTOP=sway
-  # Prefer the hardware renderer, but keep the offline installer reachable on
-  # 2D-only and recovery GPUs where wlroots would otherwise reject llvmpipe.
-  export WLR_RENDERER_ALLOW_SOFTWARE=1
-  exec sway --config "$installer_sway_config"
+  # The installer values reachability over animation speed. Pixman is part of
+  # the shipped wlroots build and works on 2D-only/recovery GPUs without adding
+  # another package; ordinary Steam sessions still use the hardware renderer.
+  export WLR_RENDERER=pixman
+  # Preserve compositor diagnostics in the journal so a failed graphical
+  # installer can be diagnosed from another VT or the disposable VM harness.
+  exec systemd-cat --identifier=frostbite-installer --priority=debug \
+    sway --debug --config "$installer_sway_config"
 fi
 
 if [[ -r /etc/frostbite/gamescope.conf ]]; then
