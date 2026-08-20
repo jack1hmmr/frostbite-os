@@ -36,7 +36,14 @@ if grep -qw 'frostbite.install=1' /proc/cmdline 2>/dev/null; then
   # another package; ordinary Steam sessions still use the hardware renderer.
   export WLR_RENDERER=pixman
   # Preserve compositor diagnostics in the journal so a failed graphical
-  # installer can be diagnosed from another VT or the disposable VM harness.
+  # installer can be diagnosed from another VT. During serial-console boots,
+  # tee the same stream to retained VM evidence without granting the live user
+  # permanent access to the serial device.
+  if [[ -c /dev/ttyS0 ]] && sudo -n test -w /dev/ttyS0 2>/dev/null; then
+    exec sway --debug --config "$installer_sway_config" \
+      > >(sudo -n tee -a /dev/ttyS0 | \
+        systemd-cat --identifier=frostbite-installer --priority=debug) 2>&1
+  fi
   exec systemd-cat --identifier=frostbite-installer --priority=debug \
     sway --debug --config "$installer_sway_config"
 fi

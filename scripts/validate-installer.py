@@ -280,6 +280,7 @@ def validate() -> None:
     )
     require(
         "export WLR_RENDERER=pixman" in session_script
+        and "sudo -n tee -a /dev/ttyS0" in session_script
         and "exec systemd-cat --identifier=frostbite-installer --priority=debug" in session_script
         and "sway --debug --config \"$installer_sway_config\"" in session_script
         and f'installer_sway_config="{installer_sway_path}"' in session_script,

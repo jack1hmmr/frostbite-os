@@ -145,6 +145,7 @@ done
 session_launcher="$repo_root/archiso/airootfs/usr/local/bin/frostbite-session"
 if ! grep -Fq "grep -qw 'frostbite.install=1' /proc/cmdline" "$session_launcher" || \
    ! grep -Fqx '  export WLR_RENDERER=pixman' "$session_launcher" || \
+   ! grep -Fqx '      > >(sudo -n tee -a /dev/ttyS0 | \' "$session_launcher" || \
    ! grep -Fqx '  exec systemd-cat --identifier=frostbite-installer --priority=debug \' "$session_launcher" || \
    ! grep -Fqx '    sway --debug --config "$installer_sway_config"' "$session_launcher"
 then
@@ -230,7 +231,7 @@ for required_vm_token in \
   screendump input-send-event tesseract 'Start Frostbite OS[\s\S]*Install Frostbite OS' \
   'Erase disk' destructive-summary \
   'all done' 'has been installed' central-inverted FROSTBITE_VM_AUDIT_PASSWORD_READY \
-  FROSTBITE_INSTALLER_DIAGNOSTICS_END 'journalctl -b -t frostbite-installer'
+  TEXT_KEY_DELAY
 do
   if ! grep -Fq "$required_vm_token" "$vm_driver"; then
     echo "stateful VM driver is missing contract token: $required_vm_token" >&2
