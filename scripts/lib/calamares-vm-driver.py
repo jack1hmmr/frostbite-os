@@ -390,21 +390,22 @@ def env_password() -> str:
     return password
 
 
-def boot_installer(driver: Driver) -> None:
-    driver.wait_text(
-        "live-grub-menu",
-        (r"start frostbite os", r"install frostbite os", r"erase one disk"),
-        timeout=180,
-        central=False,
-        reject=(),
+def boot_installer(driver: Driver, serial_log: Path) -> None:
+    # GRUB's menu is intentionally short-lived.  One OCR poll runs four
+    # Tesseract passes and can outlast the whole countdown on a fast KVM host,
+    # while the same menu is emitted immediately to GRUB's serial console.
+    wait_file_text(
+        serial_log,
+        r"Start Frostbite OS[\s\S]*Install Frostbite OS \(erase one disk\)",
+        60,
     )
     driver.key("down")
     driver.key("ret")
 
 
-def install(driver: Driver) -> None:
+def install(driver: Driver, serial_log: Path) -> None:
     password = env_password()
-    boot_installer(driver)
+    boot_installer(driver, serial_log)
 
     driver.wait_text("welcome", (r"welcome", r"frostbite"), timeout=300)
     driver.shortcut("alt", "n")
@@ -562,12 +563,12 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = parse_args()
-    if args.mode == "audit-boot" and args.serial_log is None:
-        raise DriverError("--serial-log is required for audit-boot")
+    if args.mode in ("install", "audit-boot") and args.serial_log is None:
+        raise DriverError(f"--serial-log is required for {args.mode}")
     driver = Driver(args.qmp, args.evidence)
     try:
         if args.mode == "install":
-            install(driver)
+            install(driver, args.serial_log)
         elif args.mode == "first-boot":
             first_boot(driver)
         else:

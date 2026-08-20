@@ -6,6 +6,10 @@ useradd -m -G wheel,video,audio,input,storage,power,seat -s /bin/bash frostbite
 echo 'frostbite:frostbite' | chpasswd
 usermod -p '!' root
 
+# Complete systemd's first-boot data before the immutable live image starts.
+# Calamares replaces this with the timezone selected for the installed target.
+ln -sfn /usr/share/zoneinfo/UTC /etc/localtime
+
 chmod 0440 /etc/sudoers.d/10-frostbite-live
 
 # mkarchiso removes /boot from the SquashFS after copying it to the ISO. Keep

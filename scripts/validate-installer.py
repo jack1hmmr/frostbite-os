@@ -351,6 +351,10 @@ def validate() -> None:
     require("usermod -p '!' root" in customize_script, "live root must be locked at image creation")
     require("passwd -d root" not in customize_script, "empty live root passwords are forbidden")
     require(
+        "ln -sfn /usr/share/zoneinfo/UTC /etc/localtime" in customize_script,
+        "the live image must not enter systemd's interactive first-boot timezone wizard",
+    )
+    require(
         '-static const QRegularExpression USERNAME_RX( "^[a-z_][a-z0-9_-]*[$]?$" )' in safety_patch
         and '+static const QRegularExpression USERNAME_RX( "^[a-z_][a-z0-9_-]*$" )' in safety_patch,
         "Calamares UI and finalizer username policies must agree",

@@ -213,7 +213,8 @@ if grep -Eq -- '^[[:space:]]+-(fsdev|virtfs|netdev)([[:space:],]|$)|^[[:space:]]
   exit 1
 fi
 for required_vm_token in \
-  screendump input-send-event tesseract 'Erase disk' destructive-summary \
+  screendump input-send-event tesseract 'Start Frostbite OS[\s\S]*Install Frostbite OS' \
+  'Erase disk' destructive-summary \
   'all done' 'has been installed' central-inverted FROSTBITE_VM_AUDIT_PASSWORD_READY
 do
   if ! grep -Fq "$required_vm_token" "$vm_driver"; then

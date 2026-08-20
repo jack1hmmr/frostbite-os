@@ -266,7 +266,7 @@ run_phase() {
   [[ "$qemu_pid" =~ ^[0-9]+$ ]] || die "could not identify $phase QEMU process"
 
   local -a driver_args=("$mode" --qmp "$phase_qmp_socket" --evidence "$evidence_dir/$phase")
-  if [[ "$mode" == "audit-boot" ]]; then
+  if [[ "$mode" == "install" || "$mode" == "audit-boot" ]]; then
     driver_args+=(--serial-log "$evidence_dir/$phase-serial.log")
   fi
   if ! "$driver" "${driver_args[@]}"; then
