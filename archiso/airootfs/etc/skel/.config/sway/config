@@ -23,9 +23,5 @@ bindsym $mod+Shift+e exec swaynag -t warning -m "Exit Frostbite desktop?" -b "Ex
 # D-Bus/systemd user services. Frostbite's custom config otherwise bypasses it.
 include /etc/sway/config.d/*
 
-# Fallback session (used when the GPU can't run gamescope's Vulkan
-# compositor): auto-launch Steam in Big Picture mode so this still
-# feels like a console-style session instead of a bare desktop.
-# The launcher synchronously refreshes the activation environment before Steam
-# starts and retains the Chromium Embedded Framework sandbox workaround.
+# This ordinary live and installed session remains the Steam-first desktop.
 exec $steam

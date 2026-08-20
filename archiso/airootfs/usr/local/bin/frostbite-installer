@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+fail() {
+  local message="$1"
+  if command -v swaynag >/dev/null 2>&1 && [[ -n "${SWAYSOCK:-}" ]]; then
+    swaynag -t error -m "$message" -b Close true
+  else
+    printf '%s\n' "$message" >&2
+  fi
+  exit 1
+}
+
+[[ -d /sys/firmware/efi ]] || fail "Frostbite's installer currently supports UEFI boot only."
+[[ -n "${DISPLAY:-}" ]] || fail "Launch the installer from the Frostbite Sway desktop (Super+I)."
+[[ -r /run/archiso/bootmnt/frostbite/x86_64/airootfs.sfs ]] || \
+  fail "The Frostbite installation image is not mounted."
+command -v calamares >/dev/null 2>&1 || fail "The Calamares installer is not installed in this live image."
+
+if pgrep -x calamares >/dev/null 2>&1; then
+  fail "The Frostbite installer is already running."
+fi
+
+exec pkexec /usr/bin/calamares

@@ -1,0 +1,122 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+live_user="frostbite"
+
+uid_min="$(awk '$1 == "UID_MIN" { print $2; exit }' /etc/login.defs)"
+uid_max="$(awk '$1 == "UID_MAX" { print $2; exit }' /etc/login.defs)"
+if [[ ! "$uid_min" =~ ^[0-9]+$ || ! "$uid_max" =~ ^[0-9]+$ ]] || (( uid_min > uid_max )); then
+  echo "could not determine a safe normal-user UID range from /etc/login.defs" >&2
+  exit 1
+fi
+
+[[ -d /sys/firmware/efi ]] || {
+  echo "Frostbite installation requires UEFI mode." >&2
+  exit 1
+}
+
+live_passwd="$(getent passwd "$live_user")"
+[[ -n "$live_passwd" ]] || {
+  echo "expected live account is missing: $live_user" >&2
+  exit 1
+}
+
+IFS=: read -r _ _ live_uid live_gid _ live_home live_shell <<<"$live_passwd"
+if (( live_uid < uid_min || live_uid > uid_max )) || [[ "$live_home" != "/home/frostbite" || "$live_shell" != "/bin/bash" ]]; then
+  echo "refusing to remove an unexpected live account: $live_passwd" >&2
+  exit 1
+fi
+
+# Lock root before removing the only live sudo path.
+usermod -p '!' root
+
+rm -f \
+  /etc/sudoers.d/10-frostbite-live \
+  /etc/polkit-1/rules.d/49-frostbite-live-installer.rules \
+  /etc/systemd/system/getty@tty1.service.d/autologin.conf
+
+userdel --force --remove "$live_user"
+if getent group "$live_user" >/dev/null 2>&1; then
+  groupdel "$live_user"
+fi
+
+rm -rf -- \
+  /home/frostbite \
+  /var/lib/AccountsService/icons/frostbite \
+  /var/mail/frostbite \
+  /var/spool/mail/frostbite
+rm -f \
+  /etc/passwd- \
+  /etc/shadow- \
+  /etc/group- \
+  /etc/gshadow- \
+  /etc/subuid- \
+  /etc/subgid- \
+  /var/lib/AccountsService/users/frostbite \
+  /var/lib/systemd/linger/frostbite \
+  /var/spool/cron/frostbite \
+  /var/spool/cron/crontabs/frostbite
+
+account_databases=(
+  /etc/passwd
+  /etc/shadow
+  /etc/group
+  /etc/gshadow
+  /etc/subuid
+  /etc/subgid
+)
+
+identity_token_exists() {
+  local identity="$1"
+  local database="$2"
+  awk -F: -v identity="$identity" '
+    {
+      for (field = 1; field <= NF; field++) {
+        count = split($field, values, ",")
+        for (item = 1; item <= count; item++) {
+          if (values[item] == identity) {
+            found = 1
+          }
+        }
+      }
+    }
+    END { exit found ? 0 : 1 }
+  ' "$database"
+}
+
+for database in "${account_databases[@]}"; do
+  [[ -e "$database" ]] || continue
+  if identity_token_exists "$live_user" "$database"; then
+    echo "live identity remains in $database" >&2
+    exit 1
+  fi
+done
+
+numeric_leftover="$(find / -xdev \( -uid "$live_uid" -o -gid "$live_gid" \) -print -quit)"
+if [[ -n "$numeric_leftover" ]]; then
+  echo "live UID/GID ownership remains at $numeric_leftover" >&2
+  exit 1
+fi
+
+if getent passwd "$live_user" >/dev/null 2>&1 || getent group "$live_user" >/dev/null 2>&1; then
+  echo "live account or group survived cleanup" >&2
+  exit 1
+fi
+mapfile -t normal_users < <(awk -F: -v uid_min="$uid_min" -v uid_max="$uid_max" \
+  '$3 >= uid_min && $3 <= uid_max { print $1 }' /etc/passwd)
+if (( ${#normal_users[@]} != 0 )); then
+  printf 'unexpected normal account survived live cleanup: %s\n' "${normal_users[*]}" >&2
+  exit 1
+fi
+if [[ "$(passwd -S root | awk '{print $2}')" != "L" ]]; then
+  echo "root account is not locked" >&2
+  exit 1
+fi
+
+rm -f \
+  /etc/frostbite/session-mode \
+  /var/lib/frostbite/firstboot.done \
+  /var/lib/frostbite/hardware.env \
+  /var/lib/frostbite/session-mode-detect.log
+
+echo "removed and verified Frostbite live identity"

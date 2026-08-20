@@ -1,0 +1,8 @@
+polkit.addRule(function(action, subject) {
+    if (action.id == "io.calamares.calamares.pkexec.run" &&
+        subject.user == "frostbite" &&
+        subject.local &&
+        subject.active) {
+        return polkit.Result.YES;
+    }
+});

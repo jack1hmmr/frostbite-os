@@ -5,6 +5,7 @@ amd-ucode
 base
 bash-completion
 btrfs-progs
+calamares-frostbite
 curl
 dbus
 dosfstools
@@ -35,7 +36,6 @@ lib32-vulkan-radeon
 libva-mesa-driver
 linux-firmware
 linux-zen
-linux-zen-headers
 man-db
 man-pages
 mangohud

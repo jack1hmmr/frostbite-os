@@ -1,0 +1,31 @@
+diff --git a/src/modules/partition/gui/ChoicePage.cpp b/src/modules/partition/gui/ChoicePage.cpp
+index e5db530b..6192e4ac 100644
+--- a/src/modules/partition/gui/ChoicePage.cpp
++++ b/src/modules/partition/gui/ChoicePage.cpp
+@@ -1461,6 +1461,13 @@ ChoicePage::setupActions()
+         force_uncheck( m_grp, m_replaceButton );
+     }
+ 
++    // Frostbite's first installer deliberately supports only whole-disk
++    // erase. Keep the mature Calamares erase implementation, but do not
++    // expose the less-tested alongside or replace-partition workflows even
++    // when KPMCore detects that the selected disk could support them.
++    force_uncheck( m_grp, m_alongsideButton );
++    force_uncheck( m_grp, m_replaceButton );
++
+     if ( m_somethingElseButton->isHidden() && m_alongsideButton->isHidden() && m_replaceButton->isHidden()
+          && m_eraseButton->isHidden() )
+     {
+diff --git a/src/modules/users/Config.cpp b/src/modules/users/Config.cpp
+index 86fe16cd..d218bf39 100644
+--- a/src/modules/users/Config.cpp
++++ b/src/modules/users/Config.cpp
+@@ -44,7 +44,7 @@ static const char TRANSLITERATOR_ID[] = "Russian-Latin/BGN;"
+ 
+ #include <memory>
+ 
+-static const QRegularExpression USERNAME_RX( "^[a-z_][a-z0-9_-]*[$]?$" );  // Note anchors begin and end
++static const QRegularExpression USERNAME_RX( "^[a-z_][a-z0-9_-]*$" );  // Note anchors begin and end
+ static constexpr const int USERNAME_MAX_LENGTH = 31;
+ 
+ static const QRegularExpression HOSTNAME_RX( "^[a-zA-Z0-9][-a-zA-Z0-9_]*$" );  // Note anchors begin and end

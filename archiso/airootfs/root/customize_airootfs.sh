@@ -4,9 +4,15 @@ set -euo pipefail
 systemd-sysusers
 useradd -m -G wheel,video,audio,input,storage,power,seat -s /bin/bash frostbite
 echo 'frostbite:frostbite' | chpasswd
-passwd -d root >/dev/null 2>&1 || true
+usermod -p '!' root
 
 chmod 0440 /etc/sudoers.d/10-frostbite-live
+
+# mkarchiso removes /boot from the SquashFS after copying it to the ISO. Keep
+# the package-generated microcode images where the offline installer can carry
+# them into the installed system.
+install -Dm0644 /boot/amd-ucode.img /usr/share/frostbite/installed/amd-ucode.img
+install -Dm0644 /boot/intel-ucode.img /usr/share/frostbite/installed/intel-ucode.img
 
 systemctl enable NetworkManager.service
 systemctl enable NetworkManager-wait-online.service

@@ -1,5 +1,7 @@
 ---
 componentName: frostbite
+welcomeStyleCalamares: true
+windowExpanding: normal
 strings:
   productName:         Frostbite OS
   shortProductName:    Frostbite
@@ -11,12 +13,10 @@ strings:
 images:
   productLogo:         logo.svg
   productIcon:         logo.svg
+  productWelcome:      logo.svg
 style:
-  sidebarBackground:   "#0a0a0c"
-  sidebarText:         "#f2f2f2"
-  sidebarTextSelect:   "#ffffff"
-  sidebarTextHighlight: "#5b2a86"
-  windowBackground:    "#0a0a0c"
-  windowText:          "#f2f2f2"
-  sidebarTextCurrent:  "#ffffff"
-slideshow:             ""
+  SidebarBackground:        "#0a0a0c"
+  SidebarText:              "#f2f2f2"
+  SidebarTextCurrent:       "#ffffff"
+  SidebarBackgroundCurrent: "#5b2a86"
+slideshow: [ logo.svg ]

@@ -1,0 +1,157 @@
+# Maintainer: Frostbite OS
+
+pkgname=calamares-frostbite
+pkgver=3.4.2
+pkgrel=1
+pkgdesc='Minimal Calamares build for the Frostbite OS live installer'
+arch=('x86_64')
+url='https://codeberg.org/Calamares/calamares'
+license=('GPL-3.0-or-later')
+provides=("calamares=${pkgver}")
+conflicts=('calamares')
+depends=(
+  'kcoreaddons'
+  'kpmcore'
+  'libpwquality'
+  'parted'
+  'polkit'
+  'python'
+  'qt6-base'
+  'qt6-svg'
+  'squashfs-tools'
+  'yaml-cpp'
+)
+makedepends=(
+  'cmake'
+  'extra-cmake-modules'
+  'ninja'
+  'polkit-qt6'
+  'qt6-tools'
+)
+options=('strip' '!debug')
+source=(
+  "calamares-${pkgver}.tar.gz::${url}/releases/download/v${pkgver}/calamares-${pkgver}.tar.gz"
+  'frostbite-erase-only.patch'
+  'frostbite-existing-user.patch'
+)
+sha256sums=(
+  '733bbbb00dc9f84874bd5c22960952f317ea2537565431179fa2152b2fbfdccc'
+  'cdb91f9613edf26a92b812a5aa76053c29ea1f9ddebe4b1674a2ab031416d2d0'
+  'dc41c953b83b3b2ccc36e94139b1c07b8d88b11eabc5a0fd34e53e554febd8fb'
+)
+
+prepare() {
+  patch --fuzz=0 -d "calamares-${pkgver}" -Np1 -i "${srcdir}/frostbite-erase-only.patch"
+  patch --fuzz=0 -d "calamares-${pkgver}" -Np1 -i "${srcdir}/frostbite-existing-user.patch"
+  grep -Fqx \
+    'static const QRegularExpression USERNAME_RX( "^[a-z_][a-z0-9_-]*$" );  // Note anchors begin and end' \
+    "calamares-${pkgver}/src/modules/users/Config.cpp"
+  grep -Fq \
+    '::getgrnam( loginNameBytes.constData() )' \
+    "calamares-${pkgver}/src/modules/users/Config.cpp"
+  test "$(grep -Fc 'force_uncheck( m_grp, m_alongsideButton );' \
+    "calamares-${pkgver}/src/modules/partition/gui/ChoicePage.cpp")" -ge 1
+}
+
+build() {
+  local skip_modules=(
+    contextualprocess
+    displaymanager
+    dracut
+    dracutlukscfg
+    dummycpp
+    dummyprocess
+    dummypython
+    finishedq
+    fsresizer
+    grubcfg
+    hostinfo
+    initcpiocfg
+    initramfs
+    initramfscfg
+    interactiveterminal
+    keyboardq
+    license
+    localeq
+    luksbootkeyfile
+    luksopenswaphookcfg
+    mkinitfs
+    netinstall
+    networkcfg
+    notesqml
+    oemid
+    openrcdmcryptcfg
+    packagechooser
+    packagechooserq
+    packages
+    plasmalnf
+    plymouthcfg
+    preservefiles
+    rawfs
+    removeuser
+    services-openrc
+    summaryq
+    tracking
+    unpackfsc
+    usersq
+    welcomeq
+    zfs
+    zfshostid
+  )
+
+  cmake \
+    -S "calamares-${pkgver}" \
+    -B build \
+    -G Ninja \
+    -DCMAKE_BUILD_TYPE=None \
+    -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+    -DCMAKE_INSTALL_PREFIX=/usr \
+    -DCMAKE_INSTALL_LIBDIR=lib \
+    -DWITH_QT6=ON \
+    -DWITH_QML=OFF \
+    -DWITH_PYTHON=ON \
+    -DWITH_PYBIND11=ON \
+    -DINSTALL_CONFIG=OFF \
+    -DINSTALL_POLKIT=ON \
+    -DINSTALL_COMPLETION=OFF \
+    -DBUILD_TESTING=OFF \
+    -DBUILD_SCHEMA_TESTING=OFF \
+    -DBUILD_CRASH_REPORTING=OFF \
+    -DUSE_services=systemd \
+    -DSKIP_MODULES="${skip_modules[*]}" \
+    -Wno-dev
+
+  grep -Fxq '#define WITH_PYTHON' build/src/libcalamares/CalamaresConfig.h
+  grep -Fxq '#define WITH_PYBIND11' build/src/libcalamares/CalamaresConfig.h
+  grep -Fxq '#define WITH_QT6' build/src/libcalamares/CalamaresConfig.h
+  if grep -Fxq '#define WITH_QML' build/src/libcalamares/CalamaresConfig.h; then
+    echo 'QML support was enabled unexpectedly' >&2
+    return 1
+  fi
+  if grep -Fq -- '-DWITHOUT_LIBPARTED' build/compile_commands.json; then
+    echo 'libparted support is required for the 12 GiB storage safety gate' >&2
+    return 1
+  fi
+  grep -Eq '^LIBPARTED_LIBRARY:FILEPATH=/.*/libparted\.so$' build/CMakeCache.txt
+
+  cmake --build build
+}
+
+package() {
+  DESTDIR="${pkgdir}" cmake --install build
+
+  local python_modules=(
+    bootloader
+    fstab
+    hwclock
+    localecfg
+    mount
+    services-systemd
+    unpackfs
+  )
+  local module
+  for module in "${python_modules[@]}"; do
+    test -f "${pkgdir}/usr/lib/calamares/modules/${module}/module.desc"
+    test -f "${pkgdir}/usr/lib/calamares/modules/${module}/main.py"
+  done
+}

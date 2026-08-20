@@ -78,8 +78,8 @@ mkdir -p /etc/frostbite
     if [[ $vk_rc -ne 0 ]]; then
       echo "vulkaninfo failed (nonzero exit) -> sway"
       vulkan_ok=0
-    elif echo "$vk_out" | grep -qiE "ERROR|no devices|incomplete|not supported"; then
-      echo "vulkaninfo output contains a failure/incomplete marker -> sway"
+    elif echo "$vk_out" | grep -qiE "ERROR|no devices|incomplete|not supported|llvmpipe|lavapipe|software rasterizer"; then
+      echo "vulkaninfo reports a failure or software-only renderer -> sway"
       vulkan_ok=0
     else
       echo "vulkaninfo looks clean"

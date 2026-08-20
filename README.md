@@ -19,7 +19,7 @@ The design goal is a Bazzite-like "boot to games and get out of the way" experie
 - CPU: 2-4 cores, low-power x86_64.
 - RAM: 4 GB minimum, 8 GB preferred.
 - GPU: AMD/Intel integrated graphics by default; NVIDIA installed only when building or installing that variant.
-- Storage: SSD/eMMC, 16 GB minimum install target, 32 GB preferred.
+- Storage: SSD/eMMC, 12 GiB minimum install target, 16 GiB preferred.
 - Display: 720p target for gamescope by default; Potato Mode drops the session target to 960x540.
 
 ## Architecture Choices
@@ -28,7 +28,7 @@ The design goal is a Bazzite-like "boot to games and get out of the way" experie
 - Kernel: `linux-zen` by default because it is available in official Arch repositories. A CachyOS kernel can be added in a branch by adding the keyring/repository to `archiso/pacman.conf` and replacing the kernel entries in `manifests/base.packages`.
 - Session: gamescope launches Steam Big Picture. If gamescope or Steam is unavailable, the session falls back to Sway.
 - Desktop mode: stripped Sway/wlroots, not KDE Plasma. LXQt can be added as an optional profile later, but Sway keeps the first image Wayland-first.
-- Filesystem: ext4 by default through Calamares; btrfs is available but this project does not enable snapshots or rollback by default.
+- Filesystem: one ext4 root plus a 512 MiB EFI system partition. The first installer deliberately does not expose btrfs, manual partitioning, encryption, LVM, or swap.
 - Packaging: native pacman packages first. Flatpak remains optional and is not included in the base image.
 - Swap pressure: zram with `lz4`, capped at 8 GB.
 - Logs: journald capped at 50 MB.
@@ -38,12 +38,19 @@ The design goal is a Bazzite-like "boot to games and get out of the way" experie
 Build on an Arch machine or an Arch container with enough privileges for `mkarchiso`.
 
 ```bash
-sudo pacman -Syu --needed archiso git
+sudo pacman -Syu --needed \
+  archiso base-devel cmake extra-cmake-modules git kcoreaddons kpmcore \
+  libpwquality namcap ninja parted polkit polkit-qt6 python python-yaml qt6-base \
+  qt6-svg qt6-tools squashfs-tools yaml-cpp
 cd /path/to/frostbite-os
+./scripts/build-calamares-package.sh
 sudo ./scripts/build-iso.sh
 ```
 
-The ISO lands in `out/`. The temporary build root lands in `work/archiso`.
+The first command builds Frostbite's pinned, Qt Widgets-only Calamares package
+as an unprivileged user. The ISO build then exposes that package through a
+temporary local pacman repository so dependency reasons remain correct. The ISO
+lands in `out/`; disposable package and Archiso build state stays under `work/`.
 
 Optional variants:
 
@@ -97,9 +104,27 @@ Potato Mode lowers the gamescope target to 960x540, keeps MangoHud off by defaul
 
 ## Installer
 
-Calamares branding/configuration lives in `calamares/`. During ISO builds, `scripts/sync-assets.sh` copies these files into `archiso/airootfs/etc/calamares`.
+Choose **Install Frostbite OS (erase one disk)** in the USB's GRUB menu. This
+forces the Sway path even on hardware that would normally enter gamescope and
+opens Calamares automatically. `Super+I` can retry the guarded launcher within
+that dedicated installer desktop. The first release is intentionally narrow and
+destructive: it supports UEFI x86_64 only, erases one explicitly selected disk,
+writes GPT, creates a 512 MiB FAT32 ESP, and uses the remainder for one ext4
+root. Nothing is selected by default, and the final summary must still be
+confirmed. Installation is fully offline.
 
-The installer hook preserves the lightweight defaults in the target system by enabling the Frostbite first-boot service and masking common non-essential daemons such as Bluetooth, printing, Avahi, ModemManager, PackageKit, and systemd-coredump.
+The installed user and password come from Calamares. Root is locked, sudo
+requires that user's password, and TTY1 autologin is rewritten to the chosen
+username. Installation fails if the known live account, passwordless sudo,
+Archiso initramfs state, installer packages, or installer shortcuts survive in
+the target. The full scope and release gates are in
+[`docs/installer-acceptance.md`](docs/installer-acceptance.md).
+
+Calamares configuration lives in `calamares/`; `scripts/sync-assets.sh` mirrors
+it into the Archiso root. Frostbite builds upstream Calamares 3.4.2 with Qt
+Widgets and only the required modules, avoiding Qt Quick/QML's roughly 120 MiB
+installed dependency cost. After installation, the Calamares package and its
+now-unused dependency closure are removed from the target.
 
 ## Theme
 
@@ -114,7 +139,12 @@ The theme sources are under `themes/` and are synced into the live image at buil
 
 ## CI
 
-The included GitHub Actions workflow builds inside an Arch container, installs `archiso`, runs the validation helper, and uploads the generated ISO artifact. For a production pipeline, pin the container digest and mirrorlist for stronger reproducibility.
+The included GitHub Actions workflow builds the pinned Calamares package and
+ISO in one Arch package snapshot, validates the installer contract, records
+package and ISO checksums/footprint, and uploads the generated artifacts. The
+release gate also performs a disposable UEFI VM installation and target audit;
+no physical disk is used for automated testing. For stronger reproducibility,
+pin the container digest and an Arch Linux Archive snapshot.
 
 ## Validate The Tree
 
@@ -122,7 +152,10 @@ The included GitHub Actions workflow builds inside an Arch container, installs `
 ./scripts/lint-tree.sh
 ```
 
-This checks required files and shell syntax. A full ISO build still requires a privileged Arch environment.
+This checks required files, synchronized installer assets, pinned patch
+checksum, shell/Python syntax, and the exact erase-only installer contract.
+`python-yaml` is required so configuration validation cannot be skipped. A full
+ISO build still requires a privileged Arch environment.
 
 ## Non-Goals
 

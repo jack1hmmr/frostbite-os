@@ -1,38 +1,208 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-target_user="$(awk -F: '$3 >= 1000 && $1 != "nobody" && $1 != "frostbite" { print $1; exit }' /etc/passwd)"
-target_user="${target_user:-frostbite}"
+target_user="${1:-}"
+if [[ ! "$target_user" =~ ^[a-z_][a-z0-9_-]{0,30}$ ]] || [[ "$target_user" == "frostbite" || "$target_user" == "root" ]]; then
+  echo "invalid installed username: $target_user" >&2
+  exit 1
+fi
+
+uid_min="$(awk '$1 == "UID_MIN" { print $2; exit }' /etc/login.defs)"
+uid_max="$(awk '$1 == "UID_MAX" { print $2; exit }' /etc/login.defs)"
+if [[ ! "$uid_min" =~ ^[0-9]+$ || ! "$uid_max" =~ ^[0-9]+$ ]] || (( uid_min > uid_max )); then
+  echo "could not determine a safe normal-user UID range from /etc/login.defs" >&2
+  exit 1
+fi
+
+target_passwd="$(getent passwd "$target_user")"
+[[ -n "$target_passwd" ]] || {
+  echo "installed user does not exist: $target_user" >&2
+  exit 1
+}
+IFS=: read -r _ _ target_uid target_gid _ home_dir target_shell <<<"$target_passwd"
+if (( target_uid < uid_min || target_uid > uid_max )) || [[ "$home_dir" != "/home/$target_user" || "$target_shell" != "/bin/bash" ]]; then
+  echo "installed account has unexpected properties: $target_passwd" >&2
+  exit 1
+fi
+
+# Replace Archiso's live-only kernel preset before package-removal hooks run.
+rm -f /etc/mkinitcpio.conf.d/archiso.conf /etc/mkinitcpio.d/linux-zen.preset
+sed 's|%PKGBASE%|linux-zen|g' /usr/share/mkinitcpio/hook.preset | \
+  install -Dm0644 /dev/stdin /etc/mkinitcpio.d/linux-zen.preset
+
+mapfile -t kernel_images < <(find /usr/lib/modules -mindepth 2 -maxdepth 2 -type f -name vmlinuz -print)
+if (( ${#kernel_images[@]} != 1 )); then
+  echo "expected exactly one installed kernel image, found ${#kernel_images[@]}" >&2
+  exit 1
+fi
+install -Dm0644 "${kernel_images[0]}" /boot/vmlinuz-linux-zen
+for microcode in amd-ucode.img intel-ucode.img; do
+  source_path="/usr/share/frostbite/installed/$microcode"
+  [[ -f "$source_path" ]] || {
+    echo "missing staged microcode image: $source_path" >&2
+    exit 1
+  }
+  install -Dm0644 "$source_path" "/boot/$microcode"
+done
+
+pacman -Rns --noconfirm \
+  calamares-frostbite \
+  squashfs-tools \
+  mkinitcpio-archiso
+rm -rf -- /etc/calamares /usr/share/frostbite/installed
+rm -f /var/lib/pacman/sync/frostbite-build.db*
+
+# Installer launchers and their keybinding belong to the live image only.
+rm -f \
+  /etc/sway/frostbite-installer.conf \
+  /root/customize_airootfs.sh \
+  /usr/local/bin/frostbite-installer \
+  /usr/local/bin/frostbite-install-prepare
+
+# User and group tools create database backups. Remove those after the real
+# account exists so no copy of the known live credential can survive.
+rm -f \
+  /etc/passwd- \
+  /etc/shadow- \
+  /etc/group- \
+  /etc/gshadow- \
+  /etc/subuid- \
+  /etc/subgid-
 
 mkdir -p /etc/systemd/system/getty@tty1.service.d
 cat > /etc/systemd/system/getty@tty1.service.d/autologin.conf <<CONF
+[Unit]
+Wants=frostbite-firstboot.service seatd.service
+After=frostbite-firstboot.service seatd.service
+
 [Service]
 ExecStart=
 ExecStart=-/usr/bin/agetty --autologin $target_user --noclear %I \$TERM
 Type=idle
 CONF
 
-if home_dir="$(getent passwd "$target_user" | awk -F: '{ print $6 }')" && [[ -n "$home_dir" && -d "$home_dir" ]]; then
-  install -Dm0644 /etc/skel/.bash_profile "$home_dir/.bash_profile"
-  install -Dm0644 /etc/skel/.config/MangoHud/MangoHud.conf "$home_dir/.config/MangoHud/MangoHud.conf"
-  install -Dm0644 /etc/skel/.config/gamemode.ini "$home_dir/.config/gamemode.ini"
-  install -Dm0644 /etc/skel/.config/sway/config "$home_dir/.config/sway/config"
-  chown -R "$target_user:$target_user" "$home_dir/.bash_profile" "$home_dir/.config" 2>/dev/null || true
-fi
+[[ -d "$home_dir" ]] || {
+  echo "installed home directory is missing: $home_dir" >&2
+  exit 1
+}
+install -Dm0644 -o "$target_user" -g "$target_user" /etc/skel/.bash_profile "$home_dir/.bash_profile"
+install -Dm0644 -o "$target_user" -g "$target_user" \
+  /etc/skel/.config/MangoHud/MangoHud.conf "$home_dir/.config/MangoHud/MangoHud.conf"
+install -Dm0644 -o "$target_user" -g "$target_user" \
+  /etc/skel/.config/gamemode.ini "$home_dir/.config/gamemode.ini"
+install -Dm0644 -o "$target_user" -g "$target_user" \
+  /etc/skel/.config/sway/config "$home_dir/.config/sway/config"
+chown -R "$target_user:$target_user" "$home_dir"
+chmod 0700 "$home_dir"
 
-/usr/local/bin/frostbite-hardware-detect /var/lib/frostbite/hardware.env >/dev/null 2>&1 || true
-
-systemctl enable NetworkManager.service fstrim.timer frostbite-firstboot.service frostbite-performance.service getty@tty1.service >/dev/null 2>&1 || true
-
-for unit in \
-  avahi-daemon.service avahi-daemon.socket \
-  bluetooth.service \
-  cups.service cups.socket cups.path \
-  ModemManager.service \
-  packagekit.service \
-  systemd-coredump.socket
-do
-  systemctl mask "$unit" >/dev/null 2>&1 || true
+required_groups=(wheel video audio input storage power seat)
+for group_name in "${required_groups[@]}"; do
+  if ! id -nG "$target_user" | tr ' ' '\n' | grep -Fxq "$group_name"; then
+    echo "installed user is missing group: $group_name" >&2
+    exit 1
+  fi
 done
 
+[[ "$(passwd -S "$target_user" | awk '{print $2}')" == "P" ]] || {
+  echo "installed user does not have a password" >&2
+  exit 1
+}
+[[ "$(passwd -S root | awk '{print $2}')" == "L" ]] || {
+  echo "root account is not locked" >&2
+  exit 1
+}
+
+mapfile -t normal_users < <(awk -F: -v uid_min="$uid_min" -v uid_max="$uid_max" \
+  '$3 >= uid_min && $3 <= uid_max { print $1 }' /etc/passwd)
+if (( ${#normal_users[@]} != 1 )) || [[ "${normal_users[0]:-}" != "$target_user" ]]; then
+  printf 'installed system must contain exactly one normal user (%s); found: %s\n' \
+    "$target_user" "${normal_users[*]:-none}" >&2
+  exit 1
+fi
+
+if getent passwd frostbite >/dev/null 2>&1 || getent group frostbite >/dev/null 2>&1 || [[ -e /home/frostbite ]]; then
+  echo "live Frostbite identity survived installation" >&2
+  exit 1
+fi
+
+identity_token_exists() {
+  local identity="$1"
+  local database="$2"
+  awk -F: -v identity="$identity" '
+    {
+      for (field = 1; field <= NF; field++) {
+        count = split($field, values, ",")
+        for (item = 1; item <= count; item++) {
+          if (values[item] == identity) {
+            found = 1
+          }
+        }
+      }
+    }
+    END { exit found ? 0 : 1 }
+  ' "$database"
+}
+
+for database in /etc/passwd /etc/shadow /etc/group /etc/gshadow /etc/subuid /etc/subgid; do
+  [[ -e "$database" ]] || continue
+  if identity_token_exists frostbite "$database"; then
+    echo "live identity remains in $database" >&2
+    exit 1
+  fi
+done
+for database_backup in /etc/passwd- /etc/shadow- /etc/group- /etc/gshadow- /etc/subuid- /etc/subgid-; do
+  [[ ! -e "$database_backup" ]] || {
+    echo "account database backup survived: $database_backup" >&2
+    exit 1
+  }
+done
+
+[[ ! -e /etc/sudoers.d/10-frostbite-live ]]
+[[ ! -e /etc/polkit-1/rules.d/49-frostbite-live-installer.rules ]]
+[[ ! -e /usr/share/polkit-1/actions/io.calamares.calamares.policy ]]
+[[ "$(stat -c '%a' /etc/sudoers.d/10-installer)" == "440" ]]
+grep -Fqx '%wheel ALL=(ALL:ALL) ALL' /etc/sudoers.d/10-installer
+visudo -cf /etc/sudoers
+if grep -RhsE '^[[:space:]]*[^#].*(NOPASSWD|!authenticate)' /etc/sudoers /etc/sudoers.d; then
+  echo "passwordless sudo remains enabled" >&2
+  exit 1
+fi
+if sudo -l -U "$target_user" | grep -E '(NOPASSWD|!authenticate)' >/dev/null; then
+  echo "effective passwordless sudo permission remains for $target_user" >&2
+  exit 1
+fi
+sudo -u "$target_user" sudo -k
+if sudo -u "$target_user" sudo -n /usr/bin/true >/dev/null 2>&1; then
+  echo "installed user unexpectedly has noninteractive passwordless sudo" >&2
+  exit 1
+fi
+
+for removed_package in calamares-frostbite squashfs-tools mkinitcpio-archiso; do
+  if pacman -Q "$removed_package" >/dev/null 2>&1; then
+    echo "live-only package survived: $removed_package" >&2
+    exit 1
+  fi
+done
+[[ ! -e /etc/calamares ]]
+if compgen -G '/var/lib/pacman/sync/frostbite-build.db*' >/dev/null; then
+  echo "build-local pacman repository metadata survived installation" >&2
+  exit 1
+fi
+[[ ! -e /etc/mkinitcpio.conf.d/archiso.conf ]]
+[[ ! -e /etc/sway/frostbite-installer.conf ]]
+[[ ! -e /root/customize_airootfs.sh ]]
+[[ ! -e /usr/local/bin/frostbite-installer ]]
+[[ ! -e /usr/local/bin/frostbite-install-prepare ]]
+[[ ! -e /var/lib/frostbite/firstboot.done ]]
+[[ ! -e /etc/frostbite/session-mode ]]
+if grep -RqsE 'frostbite-installer|frostbite\.install=1' /etc/skel/.config/sway "$home_dir/.config/sway"; then
+  echo "live installer shortcut survived in the installed desktop" >&2
+  exit 1
+fi
+if grep -RqsE 'archiso|cowspace|airootfs' /etc/mkinitcpio.conf /etc/mkinitcpio.conf.d /etc/mkinitcpio.d; then
+  echo "live Archiso initramfs configuration survived" >&2
+  exit 1
+fi
+
 echo "Frostbite install finalized for autologin user: $target_user"
+rm -f /usr/local/bin/frostbite-install-finalize

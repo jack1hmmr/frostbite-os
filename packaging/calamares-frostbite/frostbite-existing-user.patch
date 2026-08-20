@@ -1,0 +1,26 @@
+diff --git a/src/modules/users/Config.cpp b/src/modules/users/Config.cpp
+index 7c36882..cdb8538 100644
+--- a/src/modules/users/Config.cpp
++++ b/src/modules/users/Config.cpp
+@@ -28,6 +28,8 @@
+ #include <QFile>
+ #include <QMetaProperty>
+ #include <QRegularExpression>
++#include <grp.h>
++#include <pwd.h>
+ #include <QTimer>
+ 
+ #ifdef HAVE_ICU
+@@ -254,6 +256,12 @@ Config::loginNameStatus() const
+         return tr( "Only lowercase letters, numbers, underscore and hyphen are allowed." );
+     }
+ 
++    const auto loginNameBytes = m_loginName.toUtf8();
++    if ( ::getpwnam( loginNameBytes.constData() ) != nullptr || ::getgrnam( loginNameBytes.constData() ) != nullptr )
++    {
++        return tr( "This username is already in use." );
++    }
++
+     // Although we've made the list lower-case, and the RE above forces lower-case, still pass the flag
+     if ( forbiddenLoginNames().contains( m_loginName, Qt::CaseInsensitive ) )
+     {

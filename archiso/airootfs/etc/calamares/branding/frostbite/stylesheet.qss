@@ -1,14 +1,15 @@
-* {
+QWidget {
   color: #f2f2f2;
-  background: #0a0a0c;
+  background-color: #0a0a0c;
   selection-background-color: #5b2a86;
   selection-color: #ffffff;
 }
 
 QPushButton,
 QComboBox,
-QLineEdit {
-  background: #1a1a22;
+QLineEdit,
+QSpinBox {
+  background-color: #1a1a22;
   border: 1px solid #2a2a34;
   border-radius: 4px;
   padding: 6px 10px;
@@ -16,10 +17,11 @@ QLineEdit {
 
 QPushButton:hover,
 QComboBox:hover,
-QLineEdit:focus {
+QLineEdit:focus,
+QSpinBox:focus {
   border-color: #5b2a86;
 }
 
 QProgressBar::chunk {
-  background: #5b2a86;
+  background-color: #5b2a86;
 }

@@ -1,14 +1,37 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# XDG_RUNTIME_DIR should normally be set by systemd-logind/pam_systemd
-# at login, but TTY autologin can bypass that path and leave it unset,
-# which breaks Wayland, D-Bus, and Steam's own runtime. Set it
-# explicitly if it's missing or doesn't point at a real directory.
-if [[ -z "${XDG_RUNTIME_DIR:-}" ]] || [[ ! -d "$XDG_RUNTIME_DIR" ]]; then
-  export XDG_RUNTIME_DIR="/run/user/$(id -u)"
-  mkdir -p "$XDG_RUNTIME_DIR"
-  chmod 700 "$XDG_RUNTIME_DIR"
+# XDG_RUNTIME_DIR is created by pam_systemd. Resolve the standard path when
+# the variable is missing, but never create or repair a runtime directory from
+# the unprivileged session launcher.
+expected_runtime_dir="/run/user/$(id -u)"
+if [[ -z "${XDG_RUNTIME_DIR:-}" ]]; then
+  export XDG_RUNTIME_DIR="$expected_runtime_dir"
+fi
+[[ "$XDG_RUNTIME_DIR" == "$expected_runtime_dir" ]] || {
+  echo "XDG_RUNTIME_DIR does not match the logind runtime path: $XDG_RUNTIME_DIR" >&2
+  exit 1
+}
+[[ -d "$XDG_RUNTIME_DIR" ]] || {
+  echo "XDG_RUNTIME_DIR does not exist: $XDG_RUNTIME_DIR" >&2
+  exit 1
+}
+[[ "$(stat -Lc '%u:%a' "$XDG_RUNTIME_DIR")" == "$(id -u):700" ]] || {
+  echo "XDG_RUNTIME_DIR has unsafe ownership or mode: $XDG_RUNTIME_DIR" >&2
+  exit 1
+}
+
+# The dedicated GRUB installer entry must be reachable on GPUs that would
+# otherwise boot directly into gamescope and Steam. Sway launches Calamares
+# automatically for this one live-only mode.
+if grep -qw 'frostbite.install=1' /proc/cmdline 2>/dev/null; then
+  installer_sway_config="/etc/sway/frostbite-installer.conf"
+  [[ -f "$installer_sway_config" && ! -L "$installer_sway_config" ]] || {
+    echo "dedicated installer Sway config is missing or unsafe: $installer_sway_config" >&2
+    exit 1
+  }
+  export XDG_CURRENT_DESKTOP=sway
+  exec sway --config "$installer_sway_config"
 fi
 
 if [[ -r /etc/frostbite/gamescope.conf ]]; then

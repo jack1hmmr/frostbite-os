@@ -1,7 +1,8 @@
 [Unit]
 Description=Frostbite OS first boot hardware tuning
 ConditionPathExists=!/var/lib/frostbite/firstboot.done
-After=multi-user.target
+After=local-fs.target systemd-user-sessions.service
+Before=getty@tty1.service
 
 [Service]
 Type=oneshot

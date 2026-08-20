@@ -1,3 +1,7 @@
 .DS_Store
 frostbite-os-iso/
 .horsewhip/
+/out/
+/work/
+__pycache__/
+*.py[cod]
