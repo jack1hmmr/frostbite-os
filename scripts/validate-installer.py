@@ -257,6 +257,7 @@ def validate() -> None:
     installer_sway_path = "/etc/sway/frostbite-installer.conf"
     installer_sway = (airootfs / installer_sway_path.lstrip("/")).read_text(encoding="utf-8")
     session_script = (airootfs / "usr/local/bin/frostbite-session").read_text(encoding="utf-8")
+    installer_script = (airootfs / "usr/local/bin/frostbite-installer").read_text(encoding="utf-8")
     prepare_script = (airootfs / "usr/local/bin/frostbite-install-prepare").read_text(encoding="utf-8")
     finalize_script = (airootfs / "usr/local/bin/frostbite-install-finalize").read_text(encoding="utf-8")
     customize_script = (airootfs / "root/customize_airootfs.sh").read_text(encoding="utf-8")
@@ -291,6 +292,13 @@ def validate() -> None:
         and "bindsym $mod+i exec $installer" in installer_sway
         and "exec $installer" in installer_sway,
         "the isolated Sway session must launch exactly the guarded installer wrapper",
+    )
+    require(
+        "xhost +SI:localuser:root" in installer_script
+        and "xhost -SI:localuser:root" in installer_script
+        and "trap revoke_root_x_access EXIT" in installer_script
+        and "xhost +" not in installer_script.replace("xhost +SI:localuser:root", ""),
+        "Calamares must receive only scoped and revocable local-root Xwayland access",
     )
     unsafe_installer_bindings = (
         " kill",
@@ -350,6 +358,11 @@ def validate() -> None:
         "rm -f /var/lib/pacman/sync/frostbite-build.db*" in finalize_script
         and "build-local pacman repository metadata survived" in finalize_script,
         "target cleanup must remove and verify build-local repository metadata",
+    )
+    require(
+        "calamares-frostbite squashfs-tools mkinitcpio-archiso xorg-xhost" in finalize_script
+        and "calamares-frostbite squashfs-tools mkinitcpio-archiso xorg-xhost" in vm_audit_script,
+        "the Xwayland authorization helper must remain live-only",
     )
     require("usermod -p '!' root" in customize_script, "live root must be locked at image creation")
     require("passwd -d root" not in customize_script, "empty live root passwords are forbidden")

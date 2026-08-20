@@ -16,9 +16,26 @@ fail() {
 [[ -r /run/archiso/bootmnt/frostbite/x86_64/airootfs.sfs ]] || \
   fail "The Frostbite installation image is not mounted."
 command -v calamares >/dev/null 2>&1 || fail "The Calamares installer is not installed in this live image."
+command -v xhost >/dev/null 2>&1 || fail "The scoped Xwayland authorization tool is missing."
 
 if pgrep -x calamares >/dev/null 2>&1; then
   fail "The Frostbite installer is already running."
 fi
 
-exec pkexec /usr/bin/calamares
+# Calamares must run as root, while Sway's Xwayland server belongs to the live
+# user. pkexec preserves DISPLAY for Calamares' allow_gui policy, but Xwayland
+# still rejects root without an explicit access-control entry. Grant only the
+# local root identity—not all local clients—and revoke it when Calamares exits.
+x_access_granted=0
+revoke_root_x_access() {
+  if [[ "$x_access_granted" == "1" ]]; then
+    xhost -SI:localuser:root >/dev/null 2>&1 || true
+  fi
+}
+trap revoke_root_x_access EXIT
+
+xhost +SI:localuser:root >/dev/null 2>&1 || \
+  fail "Could not authorize the privileged installer on Frostbite's Xwayland display."
+x_access_granted=1
+
+pkexec /usr/bin/calamares

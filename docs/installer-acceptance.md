@@ -17,6 +17,9 @@ partition, and use the remainder as one ext4 root filesystem.
   tagged Sway debug output. It has no window-kill, reload, or compositor-exit
   shortcut, preventing an accidental key chord from aborting the destructive
   phase. The ordinary Steam desktop retains hardware rendering.
+- The privileged Calamares process receives Xwayland access only through a
+  temporary `si:localuser:root` entry. The launcher revokes that entry when
+  Calamares exits, and the target removes the live-only `xorg-xhost` package.
 - Whole-disk erase only. Alongside, replace-partition, manual partitioning,
   LVM, encryption, swap partitions, swap files, and non-ext4 roots are not
   offered by this release.

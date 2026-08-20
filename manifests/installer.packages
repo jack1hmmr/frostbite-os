@@ -1,3 +1,4 @@
 # Live installer packages.
 calamares-frostbite
 squashfs-tools
+xorg-xhost

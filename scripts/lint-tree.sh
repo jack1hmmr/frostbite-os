@@ -153,6 +153,22 @@ then
   exit 1
 fi
 
+installer_launcher="$repo_root/archiso/airootfs/usr/local/bin/frostbite-installer"
+if ! grep -Fqx 'xhost +SI:localuser:root >/dev/null 2>&1 || \' "$installer_launcher" || \
+   ! grep -Fqx '    xhost -SI:localuser:root >/dev/null 2>&1 || true' "$installer_launcher" || \
+   grep -Eq 'xhost[[:space:]]+\+([[:space:]]|$)' "$installer_launcher"
+then
+  echo "installer launcher lost its scoped, revocable root-only Xwayland authorization" >&2
+  exit 1
+fi
+
+if ! grep -Fqx 'swaybg' "$repo_root/manifests/gaming-core.packages" || \
+   ! grep -Fqx 'xorg-xhost' "$repo_root/manifests/installer.packages"
+then
+  echo "Sway or the live-only Xwayland authorization helper is missing" >&2
+  exit 1
+fi
+
 if ! grep -Fqx '    removeuser' "$repo_root/packaging/calamares-frostbite/PKGBUILD"; then
   echo "the unsafe removeuser module is not excluded from the custom package" >&2
   exit 1

@@ -67,6 +67,7 @@ steam
 steam-devices
 sudo
 sway
+swaybg
 systemd-sysvcompat
 ttf-dejavu
 ttf-liberation
@@ -85,5 +86,6 @@ xdg-desktop-portal
 xdg-desktop-portal-wlr
 xdg-user-dirs
 xdg-utils
+xorg-xhost
 xorg-xwayland
 zram-generator

@@ -196,7 +196,7 @@ unset audit_password
 
 # Installer packages, launchers, policy, configuration, and desktop entry
 # must not consume target space or remain callable after installation.
-for removed_package in calamares-frostbite squashfs-tools mkinitcpio-archiso; do
+for removed_package in calamares-frostbite squashfs-tools mkinitcpio-archiso xorg-xhost; do
   if pacman -Q "$removed_package" >/dev/null 2>&1; then
     fail "live-only package survived: $removed_package"
   fi

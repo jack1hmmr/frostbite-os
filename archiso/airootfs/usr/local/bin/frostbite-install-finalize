@@ -48,7 +48,8 @@ done
 pacman -Rns --noconfirm \
   calamares-frostbite \
   squashfs-tools \
-  mkinitcpio-archiso
+  mkinitcpio-archiso \
+  xorg-xhost
 rm -rf -- /etc/calamares /usr/share/frostbite/installed
 rm -f /var/lib/pacman/sync/frostbite-build.db*
 
@@ -177,7 +178,7 @@ if sudo -u "$target_user" sudo -n /usr/bin/true >/dev/null 2>&1; then
   exit 1
 fi
 
-for removed_package in calamares-frostbite squashfs-tools mkinitcpio-archiso; do
+for removed_package in calamares-frostbite squashfs-tools mkinitcpio-archiso xorg-xhost; do
   if pacman -Q "$removed_package" >/dev/null 2>&1; then
     echo "live-only package survived: $removed_package" >&2
     exit 1
