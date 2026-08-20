@@ -38,7 +38,8 @@ jobs:
           pacman -Syu --noconfirm --needed \
             archiso base-devel cmake edk2-ovmf extra-cmake-modules git grub imagemagick \
             kcoreaddons kpmcore libpwquality mkinitcpio namcap ninja parted polkit \
-            polkit-qt6 python python-yaml qemu-base qt6-base qt6-svg qt6-tools \
+            polkit-qt6 python python-yaml qemu-base qemu-hw-display-virtio-vga \
+            qt6-base qt6-svg qt6-tools \
             squashfs-tools tesseract tesseract-data-eng xorriso yaml-cpp
 
       - name: Check out repository

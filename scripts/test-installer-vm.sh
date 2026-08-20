@@ -84,7 +84,7 @@ trap 'exit 143' TERM
 
 for command_name in \
   awk blkid findmnt grep install lsblk magick python3 qemu-img qemu-system-x86_64 \
-  realpath sha256sum stat tesseract xorriso
+  realpath sed sha256sum stat tesseract xorriso
 do
   require_command "$command_name"
 done
@@ -272,7 +272,13 @@ run_phase() {
   if [[ "$mode" == "audit-boot" ]]; then
     driver_args+=(--serial-log "$evidence_dir/$phase-serial.log")
   fi
-  "$driver" "${driver_args[@]}"
+  if ! "$driver" "${driver_args[@]}"; then
+    if [[ -s "$evidence_dir/$phase-qemu.log" ]]; then
+      printf '%s\n' "--- $phase QEMU log ---" >&2
+      sed -n '1,160p' "$evidence_dir/$phase-qemu.log" >&2
+    fi
+    return 1
+  fi
 }
 
 # Install boot: ISO is read-only and first in firmware boot order. The qcow2 is
