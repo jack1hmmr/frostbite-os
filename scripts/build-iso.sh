@@ -59,8 +59,8 @@ for build_dependency in \
   qt6-svg \
   yaml-cpp
 do
-  installed_version="$(pacman -Q "$build_dependency" | awk '{print $2}')"
-  if ! grep -Fqx "installed = ${build_dependency}-${installed_version}" "$package_buildinfo"; then
+  installed_buildinfo="$(pacman -Q --print-format '%n-%v-%a' "$build_dependency")"
+  if ! grep -Fqx "installed = ${installed_buildinfo}" "$package_buildinfo"; then
     echo "Calamares package was built against a different $build_dependency snapshot" >&2
     exit 1
   fi
