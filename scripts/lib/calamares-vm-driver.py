@@ -444,14 +444,35 @@ def install(driver: Driver, serial_log: Path) -> None:
     )
     driver.click_phrase(partition, "Erase disk")
     # With a single forced no-swap choice Calamares intentionally hides the
-    # swap combobox, so the page cannot display a "No swap" label. Verify the
-    # selected erase preview here; configuration and the installed-disk audit
-    # independently enforce the absence of swap.
-    driver.wait_text("partition-erase-selected", (r"erase disk", r"after", r"efi", r"ext4"), timeout=120)
+    # swap combobox, so the page cannot display a "No swap" label. The white
+    # "After" label is also left of the normal center crop, while the preview's
+    # dim filesystem labels are not reliable OCR targets. At this reversible
+    # stage, prove the erase preview appeared; the destructive Summary gate and
+    # installed-disk audit enforce the exact target, layout, and no-swap policy
+    # before and after any disk write.
+    driver.wait_text(
+        "partition-erase-selected",
+        (r"erase disk", r"after"),
+        timeout=120,
+        central=False,
+    )
     driver.shortcut("alt", "n")
 
-    users = driver.wait_text("users", (r"what is your name", r"your full name", r"password"))
-    driver.click_phrase(users, "Your Full Name")
+    # Users-page fields start at the left edge of Calamares' content area, so
+    # the normal center crop can cut off both the labels and typed values.
+    driver.wait_text(
+        "users",
+        (
+            r"what is your name",
+            r"use to log in",
+            r"name of this computer",
+            r"choose a password",
+        ),
+        central=False,
+    )
+    # Calamares focuses the full-name field whenever this page is activated.
+    # Rely on that source-level contract instead of OCR-clicking its dim
+    # placeholder, which disappears under the high-contrast OCR transform.
     driver.type_text("Frostbite CI")
     driver.key("tab")
     driver.shortcut("ctrl", "a")
@@ -463,13 +484,28 @@ def install(driver: Driver, serial_log: Path) -> None:
     driver.type_text(password)
     driver.key("tab")
     driver.type_text(password)
-    driver.wait_text("users-filled", (r"frostbite ci", r"frosttest", r"frostbite ci"), timeout=120)
+    # Preserve a screenshot of the filled form. The transition to Summary and
+    # the two-boot installed audit are the authoritative value checks; the
+    # low-contrast QLineEdit contents are intentionally not an OCR gate.
+    driver.capture("users-filled", persist=True, central=False)
     driver.shortcut("alt", "n")
 
+    # The normal OCR crop excludes the left navigation rail and can clip the
+    # erase-mode text at the content edge. Require the confirmation-page
+    # heading plus the exact destructive disk and layout details before Alt+I.
     driver.wait_text(
         "destructive-summary",
-        (r"summary", r"erase", r"vda", r"gpt", r"512\s*mib", r"efi", r"ext4"),
+        (
+            r"install procedure",
+            r"erase",
+            r"vda",
+            r"gpt",
+            r"512\s*mib",
+            r"efi",
+            r"ext4",
+        ),
         timeout=300,
+        central=False,
     )
     # Alt+I is allowed only after all destructive target/layout assertions pass.
     driver.shortcut("alt", "i")

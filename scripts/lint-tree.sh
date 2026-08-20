@@ -254,6 +254,18 @@ do
     exit 1
   fi
 done
+destructive_summary_block="$(
+  sed -n '/"destructive-summary"/,/driver.shortcut("alt", "i")/p' "$vm_driver"
+)"
+for required_summary_token in \
+  'r"install procedure"' 'r"erase"' 'r"vda"' 'r"gpt"' \
+  'r"512\s*mib"' 'r"efi"' 'r"ext4"' 'central=False'
+do
+  if ! grep -Fq "$required_summary_token" <<<"$destructive_summary_block"; then
+    echo "destructive Summary gate is missing contract token: $required_summary_token" >&2
+    exit 1
+  fi
+done
 if ! grep -Fqx '    echo "FROSTBITE_VM_AUDIT_PASS"' "$vm_audit" || \
    ! grep -Fqx '    echo "FROSTBITE_VM_AUDIT_FAIL"' "$vm_audit"
 then
