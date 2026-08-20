@@ -51,15 +51,20 @@ jobs:
 
       - name: Build pinned minimal Calamares package
         run: |
+          test -d "$GITHUB_WORKSPACE/.git"
+          test "$(git -C "$GITHUB_WORKSPACE" rev-parse --is-inside-work-tree)" = true
+
           useradd --create-home builder
           install -d -o builder -g builder \
             "$GITHUB_WORKSPACE/work/calamares-package" \
             "$GITHUB_WORKSPACE/work/packages"
           runuser --user builder -- ./scripts/build-calamares-package.sh
 
-          git diff --exit-code
-          git diff --cached --exit-code
-          test -z "$(git status --porcelain --untracked-files=no)"
+          test -d "$GITHUB_WORKSPACE/.git"
+          test "$(git -C "$GITHUB_WORKSPACE" rev-parse --is-inside-work-tree)" = true
+          git -C "$GITHUB_WORKSPACE" diff --exit-code
+          git -C "$GITHUB_WORKSPACE" diff --cached --exit-code
+          test -z "$(git -C "$GITHUB_WORKSPACE" status --porcelain --untracked-files=no)"
 
           package_path="$(find work/packages -maxdepth 1 -type f -name 'calamares-frostbite-3.4.2-1-x86_64.pkg.tar.zst' -print -quit)"
           test -n "$package_path"
@@ -76,7 +81,7 @@ jobs:
       - name: Build ISO
         run: |
           CALAMARES_PACKAGE_DIR="$GITHUB_WORKSPACE/work/verified-packages" ./scripts/build-iso.sh
-          git diff --exit-code
+          git -C "$GITHUB_WORKSPACE" diff --exit-code
 
       - name: Record build footprint and checksums
         env:
