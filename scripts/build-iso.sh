@@ -59,7 +59,21 @@ for build_dependency in \
   qt6-svg \
   yaml-cpp
 do
-  installed_buildinfo="$(pacman -Q --print-format '%n-%v-%a' "$build_dependency")"
+  installed_version="$(pacman -Q "$build_dependency" | awk '{print $2}')"
+  installed_architecture="$(
+    LC_ALL=C pacman -Qi "$build_dependency" |
+      awk -F ':' '$1 ~ /^Architecture[[:space:]]*$/ {
+        value = $2
+        gsub(/^[[:space:]]+|[[:space:]]+$/, "", value)
+        print value
+        exit
+      }'
+  )"
+  if [[ -z "$installed_version" || -z "$installed_architecture" ]]; then
+    echo "could not identify the installed $build_dependency snapshot" >&2
+    exit 1
+  fi
+  installed_buildinfo="${build_dependency}-${installed_version}-${installed_architecture}"
   if ! grep -Fqx "installed = ${installed_buildinfo}" "$package_buildinfo"; then
     echo "Calamares package was built against a different $build_dependency snapshot" >&2
     exit 1
