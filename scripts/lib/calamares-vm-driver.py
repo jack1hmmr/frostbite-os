@@ -14,6 +14,7 @@ import io
 import json
 import os
 import re
+import shutil
 import socket
 import subprocess
 import sys
@@ -26,6 +27,8 @@ from typing import Iterable, Sequence
 SCREENSHOT_INTERVAL = 1.5
 TEXT_KEY_DELAY = 0.04
 POINTER_EVENT_DELAY = 0.1
+GRAPHICAL_SESSION_SETTLE_DELAY = 20.0
+TTY_STABILITY_DELAY = 3.0
 ABS_MAX = 0x7FFF
 
 
@@ -56,6 +59,8 @@ class ScreenState:
     scale: int
     full_png: Path
     central_png: Path
+    inverted_png: Path
+    ocr_txt: Path
 
 
 class Qmp:
@@ -249,6 +254,37 @@ class Driver:
             scale=scale,
             full_png=full_png,
             central_png=central_png,
+            inverted_png=inverted_png,
+            ocr_txt=ocr_txt,
+        )
+
+    def persist_state(self, label: str, state: ScreenState) -> ScreenState:
+        """Promote the exact matched poll frame into retained evidence."""
+        self.counter += 1
+        prefix = self.evidence_dir / f"{self.counter:02d}-{safe_name(label)}"
+        full_png = Path(f"{prefix}.png")
+        central_png = Path(f"{prefix}.central.png")
+        inverted_png = Path(f"{prefix}.central-inverted.png")
+        ocr_txt = Path(f"{prefix}.ocr.txt")
+        for source, destination in (
+            (state.full_png, full_png),
+            (state.central_png, central_png),
+            (state.inverted_png, inverted_png),
+            (state.ocr_txt, ocr_txt),
+        ):
+            shutil.copyfile(source, destination)
+        return ScreenState(
+            text=state.text,
+            words=state.words,
+            width=state.width,
+            height=state.height,
+            crop_x=state.crop_x,
+            crop_y=state.crop_y,
+            scale=state.scale,
+            full_png=full_png,
+            central_png=central_png,
+            inverted_png=inverted_png,
+            ocr_txt=ocr_txt,
         )
 
     @staticmethod
@@ -271,10 +307,10 @@ class Driver:
             last = self.capture(label, central=central)
             screen_text = normalized(last.text)
             if any(re.search(pattern, screen_text, flags=re.IGNORECASE) for pattern in reject):
-                failed = self.capture(f"{label}-rejected", persist=True, central=central)
+                failed = self.persist_state(f"{label}-rejected", last)
                 raise DriverError(f"failure text appeared while waiting for {label}: {normalized(failed.text)!r}")
             if self._matches(last, patterns):
-                return self.capture(label, persist=True, central=central)
+                return self.persist_state(label, last)
             time.sleep(SCREENSHOT_INTERVAL)
         final = self.capture(f"{label}-timeout", persist=True, central=central)
         raise DriverError(
@@ -296,7 +332,7 @@ class Driver:
         while time.monotonic() < deadline:
             state = self.capture(label, central=central)
             if self._matches(state, patterns):
-                return self.capture(label, persist=True, central=central)
+                return self.persist_state(label, state)
             now = time.monotonic()
             if now >= next_action:
                 action()
@@ -527,12 +563,37 @@ def enter_tty2(driver: Driver, label: str) -> None:
         driver.key("ret")
         driver.key("f2", "ctrl", "alt")
 
+    # tty2 can become available before frostbite-firstboot finishes. Once that
+    # oneshot completes, tty1 autologin starts Sway and takes the display back;
+    # typing immediately after the first transient prompt would go to Sway.
+    # Observe boot readiness, let that graphical takeover settle, then select
+    # tty2 again and require its login prompt a second time.
     driver.wait_text_with_action(
-        f"{label}-tty2-login",
+        f"{label}-early-tty2-login",
         (r"frostbite ci login",),
         advance_boot_and_select_tty2,
         timeout=480,
         central=False,
+    )
+    time.sleep(GRAPHICAL_SESSION_SETTLE_DELAY)
+
+    driver.wait_text_with_action(
+        f"{label}-tty2-selected",
+        (r"frostbite ci login",),
+        lambda: driver.key("f2", "ctrl", "alt"),
+        timeout=180,
+        central=False,
+    )
+    # Do not inject another VT switch during this quarantine. A prompt that is
+    # still visible after the delay is stable rather than another transient
+    # frame caught while tty1 is taking over.
+    time.sleep(TTY_STABILITY_DELAY)
+    driver.wait_text(
+        f"{label}-tty2-login",
+        (r"frostbite ci login",),
+        timeout=30,
+        central=False,
+        reject=(),
     )
 
 

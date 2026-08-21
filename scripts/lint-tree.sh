@@ -257,10 +257,26 @@ for required_vm_token in \
   screendump input-send-event tesseract 'Start Frostbite OS[\s\S]*Install Frostbite OS' \
   'Erase disk' destructive-summary \
   'all done' 'has been installed' central-inverted FROSTBITE_VM_AUDIT_PASSWORD_READY \
-  TEXT_KEY_DELAY POINTER_EVENT_DELAY
+  TEXT_KEY_DELAY POINTER_EVENT_DELAY TTY_STABILITY_DELAY early-tty2-login persist_state
 do
   if ! grep -Fq "$required_vm_token" "$vm_driver"; then
     echo "stateful VM driver is missing contract token: $required_vm_token" >&2
+    exit 1
+  fi
+done
+if ! grep -Fqx 'GRAPHICAL_SESSION_SETTLE_DELAY = 20.0' "$vm_driver" || \
+   ! grep -Fqx 'TTY_STABILITY_DELAY = 3.0' "$vm_driver"
+then
+  echo "installed-boot VT stabilization timing changed" >&2
+  exit 1
+fi
+tty2_entry_block="$(sed -n '/^def enter_tty2/,/^def login_installed/p' "$vm_driver")"
+for required_tty2_token in \
+  'early-tty2-login' 'time.sleep(GRAPHICAL_SESSION_SETTLE_DELAY)' \
+  'tty2-selected' 'time.sleep(TTY_STABILITY_DELAY)' 'tty2-login' 'reject=()'
+do
+  if ! grep -Fq "$required_tty2_token" <<<"$tty2_entry_block"; then
+    echo "installed-boot VT stabilization is missing: $required_tty2_token" >&2
     exit 1
   fi
 done
