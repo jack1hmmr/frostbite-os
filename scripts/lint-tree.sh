@@ -152,6 +152,16 @@ then
   echo "the installer boot flag does not force the dedicated recoverable Sway path" >&2
   exit 1
 fi
+fallback_sway_block="$(
+  sed -n '/^if \[\[ "$session_mode" == "sway" \]\]; then$/,/^exec sway$/p' "$session_launcher"
+)"
+if ! grep -Fqx 'if [[ "$session_mode" == "sway" ]]; then' <<<"$fallback_sway_block" || \
+   ! grep -Fqx '  export WLR_RENDERER=pixman' <<<"$fallback_sway_block" || \
+   ! grep -Fqx 'exec sway' <<<"$fallback_sway_block"
+then
+  echo "the persisted Sway fallback must force wlroots' pixman renderer" >&2
+  exit 1
+fi
 
 installer_launcher="$repo_root/archiso/airootfs/usr/local/bin/frostbite-installer"
 if ! grep -Fqx 'xhost +SI:localuser:root >/dev/null 2>&1 || \' "$installer_launcher" || \

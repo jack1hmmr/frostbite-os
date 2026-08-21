@@ -294,6 +294,14 @@ def validate() -> None:
         "the isolated Sway session must launch exactly the guarded installer wrapper",
     )
     require(
+        'if [[ "$session_mode" == "sway" ]]; then\n'
+        "  export WLR_RENDERER=pixman\n"
+        "fi\n"
+        "exec sway"
+        in session_script,
+        "the persisted Sway fallback must force wlroots' pixman renderer",
+    )
+    require(
         "xhost +SI:localuser:root" in installer_script
         and "xhost -SI:localuser:root" in installer_script
         and "trap revoke_root_x_access EXIT" in installer_script

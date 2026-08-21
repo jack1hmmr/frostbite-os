@@ -86,4 +86,12 @@ if [[ "$session_mode" == "gamescope" ]] && command -v gamescope >/dev/null 2>&1 
 fi
 
 export XDG_CURRENT_DESKTOP=sway
+# First boot selects the Sway mode when Vulkan is software-only or unusable.
+# Force wlroots' built-in CPU renderer for that persisted recovery path so the
+# compositor does not reject the same llvmpipe/lavapipe environment that made
+# gamescope unsafe. The normal hardware-capable gamescope path exits above and
+# keeps its hardware renderer.
+if [[ "$session_mode" == "sway" ]]; then
+  export WLR_RENDERER=pixman
+fi
 exec sway
