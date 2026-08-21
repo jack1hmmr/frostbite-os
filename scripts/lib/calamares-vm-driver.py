@@ -444,15 +444,15 @@ def install(driver: Driver, serial_log: Path) -> None:
     )
     driver.click_phrase(partition, "Erase disk")
     # With a single forced no-swap choice Calamares intentionally hides the
-    # swap combobox, so the page cannot display a "No swap" label. The white
-    # "After" label is also left of the normal center crop, while the preview's
-    # dim filesystem labels are not reliable OCR targets. At this reversible
-    # stage, prove the erase preview appeared; the destructive Summary gate and
-    # installed-disk audit enforce the exact target, layout, and no-swap policy
-    # before and after any disk write.
+    # swap combobox, so the page cannot display a "No swap" label. Full-screen
+    # OCR reliably reads the selected preview's fixed 512 MiB FAT32 ESP and ext4
+    # root even though it garbles the small left-side "After" label. At this
+    # reversible stage, prove that exact preview appeared for /dev/vda; the
+    # destructive Summary gate and installed-disk audit enforce it again before
+    # and after any disk write.
     driver.wait_text(
         "partition-erase-selected",
-        (r"erase disk", r"after"),
+        (r"erase disk", r"vda", r"512\s*00\s*mib", r"fat32", r"ext4"),
         timeout=120,
         central=False,
     )

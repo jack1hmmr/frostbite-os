@@ -276,6 +276,17 @@ do
     exit 1
   fi
 done
+partition_selected_block="$(
+  sed -n '/"partition-erase-selected"/,/driver.shortcut("alt", "n")/p' "$vm_driver"
+)"
+for required_preview_token in \
+  'r"erase disk"' 'r"vda"' 'r"512\s*00\s*mib"' 'r"fat32"' 'r"ext4"' 'central=False'
+do
+  if ! grep -Fq "$required_preview_token" <<<"$partition_selected_block"; then
+    echo "selected erase preview is missing contract token: $required_preview_token" >&2
+    exit 1
+  fi
+done
 if ! grep -Fqx '    echo "FROSTBITE_VM_AUDIT_PASS"' "$vm_audit" || \
    ! grep -Fqx '    echo "FROSTBITE_VM_AUDIT_FAIL"' "$vm_audit"
 then
